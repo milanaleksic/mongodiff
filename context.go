@@ -11,19 +11,31 @@ import (
 	"github.com/mongodb/mongo-tools/common/bsonutil"
 )
 
+type CollectionItem struct {
+	Id bson.ObjectId "_id"
+}
+
+type CollectionIds struct {
+	Ids map[bson.ObjectId]bool
+}
+
+type Data map[string]CollectionIds
+
 type Context struct {
 	session *mgo.Session
 	db      *mgo.Database
+	host    string
+	dbName  string
 }
 
 func (context *Context) connect() {
 	var err error
-	context.session, err = mgo.Dial(host)
+	context.session, err = mgo.Dial(context.host)
 	if err != nil {
 		panic(err)
 	}
 	context.session.SetMode(mgo.Monotonic, true)
-	context.db = context.session.DB(db)
+	context.db = context.session.DB(context.dbName)
 }
 
 func (context *Context) close() {
@@ -102,7 +114,7 @@ func openFileOrFatal(filename string) (file *os.File) {
 	return
 }
 
-func (context *Context) makeJavaScript(filename string, diffData Data) {
+func (context *Context) makeScriptFiles(filename string, diffData Data) {
 	script := openFileOrFatal(filename + ".sh")
 	defer script.Close()
 	writerScript := bufio.NewWriter(script)
@@ -112,11 +124,11 @@ func (context *Context) makeJavaScript(filename string, diffData Data) {
 	writerJavaScript := bufio.NewWriter(javaScript)
 
 	fmt.Fprintln(writerScript, "#!/bin/bash")
-	fmt.Fprintln(writerScript, fmt.Sprintf("mongo $MONGO_SERVER/%s %s.js", db, filename))
+	fmt.Fprintln(writerScript, fmt.Sprintf("mongo $MONGO_SERVER/%s %s.js", context.dbName, filename))
 
 	for collectionName, ids := range diffData {
 		importScriptFilename := fmt.Sprintf("%s_%s.json", filename, collectionName)
-		fmt.Fprintln(writerScript, fmt.Sprintf("mongoimport --host $MONGO_SERVER --db %s --collection %s < %s", db, collectionName, importScriptFilename))
+		fmt.Fprintln(writerScript, fmt.Sprintf("mongoimport --host $MONGO_SERVER --db %s --collection %s < %s", context.dbName, collectionName, importScriptFilename))
 		importScript := openFileOrFatal(importScriptFilename)
 		defer importScript.Close()
 		writerImportScript := bufio.NewWriter(importScript)
