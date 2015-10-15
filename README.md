@@ -1,18 +1,9 @@
 ## Preconditions
 
-Expectations:
+This utility makes a script to reproduce manual actions done on a Mongo DB.
 
-    export GO15VENDOREXPERIMENT=1
-    go get github.com/kardianos/govendor
-    
-Package in vendor an existing 3rd party library dependency
+It makes internally a simple diff (only new items are being detected, updates are ignored currently).
 
-    govendor list
-    govendor add <import>
-
-### IntelliJ
-
-Until IntelliJ starts supporting officially the 1.5 vendor experiment, expectations is that
-each library is _still_ manually fetched via `go get` although it shouldn't really be any need for that
-
-More info: [Issue 1820 for Intellij plugin for GoLang](https://github.com/go-lang-plugin-org/go-lang-idea-plugin/issues/1820)
+As a result, one should get BASH, JS and JSON files that alltogether work to reproduce actions when it's needed.
+ 
+To see what options are available, please run application with `--help` parameter
