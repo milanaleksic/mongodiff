@@ -7,7 +7,6 @@ import (
 
 	"github.com/mgutz/ansi"
 	"os/signal"
-	"syscall"
 )
 
 var blueFormat func(string) string = ansi.ColorFunc("blue+b+h")
@@ -51,9 +50,9 @@ func waitForStop(waitForSignal bool) {
 	done := make(chan bool)
 
 	go func () {
-		fmt.Println(blueFormat("Send SIGTSTP (Ctrl+Z) when completed the introduction of things you wish to put in demo contents"))
+		fmt.Println(blueFormat("Send SIGINT (Ctrl+C) when completed the introduction of things you wish to put in demo contents"))
 		signalChannel := make(chan os.Signal)
-		signal.Notify(signalChannel, syscall.SIGTSTP)
+		signal.Notify(signalChannel, os.Interrupt)
 		select {
 		case c:= <- signalChannel:
 			fmt.Println(blueFormat("Signal received: ") + redFormat(c.String()))
