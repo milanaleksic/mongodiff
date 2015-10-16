@@ -115,20 +115,31 @@ func openFileOrFatal(filename string) (file *os.File) {
 }
 
 func (context *Context) makeScriptFiles(filename string, diffData Data) {
-	script := openFileOrFatal(filename + ".sh")
-	defer script.Close()
-	writerScript := bufio.NewWriter(script)
+	//TODO: use events for this instead of hardcoding files
+	scriptBash := openFileOrFatal(filename + ".sh")
+	defer scriptBash.Close()
+	writerScriptBash := bufio.NewWriter(scriptBash)
+	defer writerScriptBash.Flush()
+
+	scriptBat := openFileOrFatal(filename + ".bat")
+	defer scriptBat.Close()
+	writerScriptBat := bufio.NewWriter(scriptBat)
+	defer writerScriptBat.Flush()
 
 	javaScript := openFileOrFatal(filename + ".js")
 	defer javaScript.Close()
 	writerJavaScript := bufio.NewWriter(javaScript)
+	defer writerJavaScript.Flush()
 
-	fmt.Fprintln(writerScript, "#!/bin/bash")
-	fmt.Fprintln(writerScript, fmt.Sprintf("mongo $MONGO_SERVER/%s %s.js", context.dbName, filename))
+	fmt.Fprintln(writerScriptBash, "#!/bin/bash")
+	fmt.Fprintln(writerScriptBash, fmt.Sprintf("mongo $MONGO_SERVER/%s %s.js", context.dbName, filename))
+	fmt.Fprintln(writerScriptBat, "@echo off")
+	fmt.Fprintln(writerScriptBat, fmt.Sprintf("mongo %MONGO_SERVER%/%s %s.js", context.dbName, filename))
 
 	for collectionName, ids := range diffData {
 		importScriptFilename := fmt.Sprintf("%s_%s.json", filename, collectionName)
-		fmt.Fprintln(writerScript, fmt.Sprintf("mongoimport --host $MONGO_SERVER --db %s --collection %s < %s", context.dbName, collectionName, importScriptFilename))
+		fmt.Fprintln(writerScriptBash, fmt.Sprintf("mongoimport --host $MONGO_SERVER --db %s --collection %s < %s", context.dbName, collectionName, importScriptFilename))
+		fmt.Fprintln(writerScriptBat, fmt.Sprintf("mongoimport --host %MONGO_SERVER% --db %s --collection %s < %s", context.dbName, collectionName, importScriptFilename))
 		importScript := openFileOrFatal(importScriptFilename)
 		defer importScript.Close()
 		writerImportScript := bufio.NewWriter(importScript)
@@ -139,8 +150,6 @@ func (context *Context) makeScriptFiles(filename string, diffData Data) {
 			context.dumpJsonToFile(collectionName, id, writerImportScript)
 		}
 	}
-	writerScript.Flush()
-	writerJavaScript.Flush()
 }
 
 func (context *Context) dumpJsonToFile(collectionName string, id bson.ObjectId, writerImportScript *bufio.Writer) {
