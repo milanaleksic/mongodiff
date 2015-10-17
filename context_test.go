@@ -1,14 +1,15 @@
 package main
 
 import (
-	"testing"
 	"fmt"
-	"io/ioutil"
-	"os/exec"
-	"os"
-	"net"
 	"gopkg.in/mgo.v2/bson"
+	"io/ioutil"
+	"net"
+	"os"
+	"os/exec"
+	"runtime"
 	"strings"
+	"testing"
 )
 
 func TestDiffDetection(t *testing.T) {
@@ -58,7 +59,7 @@ func TestDiffDetection(t *testing.T) {
 
 	context := Context{
 		dbName: "test",
-		host: "localhost",
+		host:   "localhost",
 	}
 	context.connect()
 	defer context.close()
@@ -85,6 +86,7 @@ func TestDiffDetection(t *testing.T) {
 	defer os.Remove("./testing.js")
 	defer os.Remove("./testing_diffTest.json")
 	defer os.Remove("./testing.sh")
+	defer os.Remove("./testing.bat")
 
 	data, err := ioutil.ReadFile("./testing_diffTest.json")
 	if err != nil {
@@ -96,10 +98,19 @@ func TestDiffDetection(t *testing.T) {
 		t.FailNow()
 	}
 
+	os.Setenv("MONGO_SERVER", "localhost")
 	run("mongo", "localhost:27017/test", preFile.Name())
 	beforeAutoScript := context.collectData()
-	run("chmod", "+x", "./testing.sh")
-	run("/bin/bash", "./testing.sh")
+	if runtime.GOOS == "windows" {
+		run("testing.bat")
+	} else if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		run("chmod", "+x", "./testing.sh")
+		run("/bin/bash", "./testing.sh")
+	} else {
+		t.Error("Can't complete test since this platform is not supported: only linux and windows are supported")
+		t.FailNow()
+	}
+
 	afterAutoScript := context.collectData()
 
 	diffData = context.diffData(beforeAutoScript, afterAutoScript)

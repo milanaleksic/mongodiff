@@ -1,14 +1,14 @@
 package main
 
 import (
-	mgo "gopkg.in/mgo.v2"
 	"bufio"
-	"fmt"
-	"os"
-	"log"
-	"gopkg.in/mgo.v2/bson"
 	"encoding/json"
+	"fmt"
 	"github.com/mongodb/mongo-tools/common/bsonutil"
+	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+	"log"
+	"os"
 )
 
 type CollectionItem struct {
@@ -134,12 +134,12 @@ func (context *Context) makeScriptFiles(filename string, diffData Data) {
 	fmt.Fprintln(writerScriptBash, "#!/bin/bash")
 	fmt.Fprintln(writerScriptBash, fmt.Sprintf("mongo $MONGO_SERVER/%s %s.js", context.dbName, filename))
 	fmt.Fprintln(writerScriptBat, "@echo off")
-	fmt.Fprintln(writerScriptBat, fmt.Sprintf("mongo %MONGO_SERVER%/%s %s.js", context.dbName, filename))
+	fmt.Fprintln(writerScriptBat, fmt.Sprintf("mongo %sMONGO_SERVER%s\\%s %s.js", "%", "%", context.dbName, filename))
 
 	for collectionName, ids := range diffData {
 		importScriptFilename := fmt.Sprintf("%s_%s.json", filename, collectionName)
 		fmt.Fprintln(writerScriptBash, fmt.Sprintf("mongoimport --host $MONGO_SERVER --db %s --collection %s < %s", context.dbName, collectionName, importScriptFilename))
-		fmt.Fprintln(writerScriptBat, fmt.Sprintf("mongoimport --host %MONGO_SERVER% --db %s --collection %s < %s", context.dbName, collectionName, importScriptFilename))
+		fmt.Fprintln(writerScriptBat, fmt.Sprintf("mongoimport --host %sMONGO_SERVER%s --db %s --collection %s < %s", "%", "%", context.dbName, collectionName, importScriptFilename))
 		importScript := openFileOrFatal(importScriptFilename)
 		defer importScript.Close()
 		writerImportScript := bufio.NewWriter(importScript)
@@ -154,7 +154,7 @@ func (context *Context) makeScriptFiles(filename string, diffData Data) {
 
 func (context *Context) dumpJsonToFile(collectionName string, id bson.ObjectId, writerImportScript *bufio.Writer) {
 	raw := bson.D{}
-	err := context.db.C(collectionName).Find(bson.M{"_id":id}).One(&raw)
+	err := context.db.C(collectionName).Find(bson.M{"_id": id}).One(&raw)
 	if err != nil {
 		log.Fatalln("Could not open Marshal raw data", err)
 	}
