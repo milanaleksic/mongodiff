@@ -9,6 +9,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"os"
+	"strings"
 )
 
 type CollectionItem struct {
@@ -22,10 +23,11 @@ type CollectionIds struct {
 type Data map[string]CollectionIds
 
 type Context struct {
-	session *mgo.Session
-	db      *mgo.Database
-	host    string
-	dbName  string
+	session  *mgo.Session
+	db       *mgo.Database
+	host     string
+	dbName   string
+	excludes string
 }
 
 func (context *Context) connect() {
@@ -48,7 +50,13 @@ func (context *Context) collectData() (data Data) {
 		log.Fatal("Could not fetch collection names (?)", err)
 	}
 	data = make(Data)
+outer:
 	for _, collection := range collections {
+		for _, exclude := range strings.Split(context.excludes, ",") {
+			if collection == exclude {
+				continue outer
+			}
+		}
 		ids := make(map[bson.ObjectId]bool, 0)
 		iter := context.db.C(collection).Find(nil).Iter()
 
@@ -117,6 +125,7 @@ func openFileOrFatal(filename string) (file *os.File) {
 func (context *Context) makeScriptFiles(filename string, diffData Data) {
 	//TODO: use events for this instead of hardcoding files
 	scriptBash := openFileOrFatal(filename + ".sh")
+	scriptBash.Chmod(0555)
 	defer scriptBash.Close()
 	writerScriptBash := bufio.NewWriter(scriptBash)
 	defer writerScriptBash.Flush()

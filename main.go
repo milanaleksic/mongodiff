@@ -21,11 +21,13 @@ func main() {
 	var fileOutput *string = flag.String("fileOutput", "setup", "Prefix to use for all files to use as target dump of the setup script")
 	var waitForSignal *bool = flag.Bool("waitForSignal", true, "should program wait for Ctrl+Z before it fetches changes from DB?")
 	var dbName *string = flag.String("db", "test", "Which DB to monitor")
+	var excludes *string = flag.String("excludes", "", "Which collections to ignore")
 	flag.Parse()
 
 	context := Context{
-		host: *host,
-		dbName: *dbName,
+		host:     *host,
+		dbName:   *dbName,
+		excludes: *excludes,
 	}
 	context.connect()
 	defer context.close()
@@ -49,14 +51,14 @@ func main() {
 func waitForStop(waitForSignal bool) {
 	done := make(chan bool)
 
-	go func () {
-		fmt.Println(blueFormat("Send SIGINT (Ctrl+C) when completed the introduction of things you wish to put in demo contents"))
+	go func() {
+		fmt.Println(blueFormat("Send SIGINT (") + redFormat("Ctrl+C") + blueFormat(") when completed the introduction of things you wish to put in demo contents"))
 		signalChannel := make(chan os.Signal)
 		signal.Notify(signalChannel, os.Interrupt)
 		select {
-		case c:= <- signalChannel:
+		case c := <-signalChannel:
 			fmt.Println(blueFormat("Signal received: ") + redFormat(c.String()))
-			done<-true
+			done <- true
 		}
 	}()
 
