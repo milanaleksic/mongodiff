@@ -124,8 +124,9 @@ func openFileOrFatal(filename string) (file *os.File) {
 
 func (context *Context) makeScriptFiles(filename string, diffData Data) {
 	//TODO: use events for this instead of hardcoding files
+	//TODO: use templates goddammmit
 	scriptBash := openFileOrFatal(filename + ".sh")
-	scriptBash.Chmod(0555)
+	scriptBash.Chmod(0777)
 	defer scriptBash.Close()
 	writerScriptBash := bufio.NewWriter(scriptBash)
 	defer writerScriptBash.Flush()
@@ -135,15 +136,24 @@ func (context *Context) makeScriptFiles(filename string, diffData Data) {
 	writerScriptBat := bufio.NewWriter(scriptBat)
 	defer writerScriptBat.Flush()
 
-	javaScript := openFileOrFatal(filename + ".js")
-	defer javaScript.Close()
-	writerJavaScript := bufio.NewWriter(javaScript)
-	defer writerJavaScript.Flush()
+	removalJsScript := openFileOrFatal(filename + "_clean.js")
+	defer removalJsScript.Close()
+	writerJsRemovalScript := bufio.NewWriter(removalJsScript)
+	defer writerJsRemovalScript.Flush()
 
-	fmt.Fprintln(writerScriptBash, "#!/bin/bash")
-	fmt.Fprintln(writerScriptBash, fmt.Sprintf("mongo $MONGO_SERVER/%s %s.js", context.dbName, filename))
-	fmt.Fprintln(writerScriptBat, "@echo off")
-	fmt.Fprintln(writerScriptBat, fmt.Sprintf("mongo %sMONGO_SERVER%s\\%s %s.js", "%", "%", context.dbName, filename))
+	fmt.Fprintf(writerScriptBash, `#!/bin/bash
+mongo $MONGO_SERVER/%s %s_clean.js
+if [ "$1" = "clean" ]
+then
+     echo "Only cleaning requested"
+     exit
+fi
+`, context.dbName, filename)
+
+	fmt.Fprintf(writerScriptBat, `@echo off
+mongo %sMONGO_SERVER%s/%s %s_clean.js
+IF "%s1" == "clean" EXIT /B 0
+`, "%", "%", context.dbName, filename, "%")
 
 	for collectionName, ids := range diffData {
 		importScriptFilename := fmt.Sprintf("%s_%s.json", filename, collectionName)
@@ -154,7 +164,7 @@ func (context *Context) makeScriptFiles(filename string, diffData Data) {
 		writerImportScript := bufio.NewWriter(importScript)
 
 		for id, _ := range ids.Ids {
-			fmt.Fprintf(writerJavaScript, "db.%s.remove({\"_id\":ObjectId(\"%s\")});\n", collectionName, id.Hex())
+			fmt.Fprintf(writerJsRemovalScript, "db.%s.remove({\"_id\":ObjectId(\"%s\")});\n", collectionName, id.Hex())
 
 			context.dumpJsonToFile(collectionName, id, writerImportScript)
 		}
