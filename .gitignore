@@ -25,4 +25,5 @@ _testmain.go
 *.prof
 
 # Created by .ignore support plugin (hsz.mobi)
-give_me_demo
+mongodiff
+mongodiff.exe

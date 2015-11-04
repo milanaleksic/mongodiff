@@ -83,7 +83,7 @@ func TestDiffDetection(t *testing.T) {
 		t.FailNow()
 	}
 	context.makeScriptFiles("testing", diffData)
-	defer os.Remove("./testing.js")
+	defer os.Remove("./testing_clean.js")
 	defer os.Remove("./testing_diffTest.json")
 	defer os.Remove("./testing.sh")
 	defer os.Remove("./testing.bat")
