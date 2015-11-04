@@ -1,0 +1,5 @@
+@echo off
+
+mongo %MONGO_SERVER%/{{.DbName}} {{.Filename}}_clean.js
+IF "%1" == "clean" EXIT /B 0
+

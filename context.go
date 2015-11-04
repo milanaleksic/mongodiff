@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"text/template"
 )
 
 type CollectionItem struct {
@@ -141,19 +142,23 @@ func (context *Context) makeScriptFiles(filename string, diffData Data) {
 	writerJsRemovalScript := bufio.NewWriter(removalJsScript)
 	defer writerJsRemovalScript.Flush()
 
-	fmt.Fprintf(writerScriptBash, `#!/bin/bash
-mongo $MONGO_SERVER/%s %s_clean.js
-if [ "$1" = "clean" ]
-then
-     echo "Only cleaning requested"
-     exit
-fi
-`, context.dbName, filename)
+	templateData := struct {
+		DbName   string
+		Filename string
+	}{
+		context.dbName, filename,
+	}
 
-	fmt.Fprintf(writerScriptBat, `@echo off
-mongo %sMONGO_SERVER%s/%s %s_clean.js
-IF "%s1" == "clean" EXIT /B 0
-`, "%", "%", context.dbName, filename, "%")
+	template, err := template.New("data/template_bash").Parse(string(MustAsset("data/template_bash")))
+	if err != nil {
+		log.Fatalf("Template couldn't be parsed", err)
+	}
+	template.Execute(writerScriptBash, templateData)
+	template, err = template.New("data/template_bat").Parse(string(MustAsset("data/template_bat")))
+	if err != nil {
+		log.Fatalf("Template couldn't be parsed", err)
+	}
+	template.Execute(writerScriptBat, templateData)
 
 	for collectionName, ids := range diffData {
 		importScriptFilename := fmt.Sprintf("%s_%s.json", filename, collectionName)

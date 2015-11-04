@@ -1,0 +1,8 @@
+#!/bin/bash
+mongo $MONGO_SERVER/{{.DbName}} {{.Filename}}_clean.js
+if [ "$1" = "clean" ]
+then
+     echo "Only cleaning requested"
+     exit
+fi
+
