@@ -125,55 +125,72 @@ func openFileOrFatal(filename string) (file *os.File) {
 
 func (context *Context) makeScriptFiles(filename string, diffData Data) {
 	//TODO: use events for this instead of hardcoding files
-	//TODO: use templates goddammmit
+	templateData := struct {
+		DbName            string
+		Filename          string
+		CollectionChanges []struct {
+			CollectionName   string
+			ImportScriptName string
+			AddedIds         []string
+		}
+	}{
+		DbName: context.dbName, Filename: filename,
+	}
+
+	for collectionName, ids := range diffData {
+		importScriptFilename := fmt.Sprintf("%s_%s.json", filename, collectionName)
+		importScript := openFileOrFatal(importScriptFilename)
+		defer importScript.Close()
+		writerImportScript := bufio.NewWriter(importScript)
+
+		newIds := make([]string, 0)
+		for id, _ := range ids.Ids {
+			newIds = append(newIds, id.Hex())
+			context.dumpJsonToFile(collectionName, id, writerImportScript)
+		}
+
+		templateData.CollectionChanges = append(templateData.CollectionChanges, struct {
+			CollectionName   string
+			ImportScriptName string
+			AddedIds         []string
+		}{
+			collectionName, importScriptFilename, newIds,
+		})
+	}
+
+	// BASH creation from template
 	scriptBash := openFileOrFatal(filename + ".sh")
 	scriptBash.Chmod(0777)
 	defer scriptBash.Close()
 	writerScriptBash := bufio.NewWriter(scriptBash)
 	defer writerScriptBash.Flush()
-
-	scriptBat := openFileOrFatal(filename + ".bat")
-	defer scriptBat.Close()
-	writerScriptBat := bufio.NewWriter(scriptBat)
-	defer writerScriptBat.Flush()
-
-	removalJsScript := openFileOrFatal(filename + "_clean.js")
-	defer removalJsScript.Close()
-	writerJsRemovalScript := bufio.NewWriter(removalJsScript)
-	defer writerJsRemovalScript.Flush()
-
-	templateData := struct {
-		DbName   string
-		Filename string
-	}{
-		context.dbName, filename,
-	}
-
 	template, err := template.New("data/template_bash").Parse(string(MustAsset("data/template_bash")))
 	if err != nil {
 		log.Fatalf("Template couldn't be parsed", err)
 	}
 	template.Execute(writerScriptBash, templateData)
+
+	// BAT creation from template
+	scriptBat := openFileOrFatal(filename + ".bat")
+	defer scriptBat.Close()
+	writerScriptBat := bufio.NewWriter(scriptBat)
+	defer writerScriptBat.Flush()
 	template, err = template.New("data/template_bat").Parse(string(MustAsset("data/template_bat")))
 	if err != nil {
 		log.Fatalf("Template couldn't be parsed", err)
 	}
 	template.Execute(writerScriptBat, templateData)
 
-	for collectionName, ids := range diffData {
-		importScriptFilename := fmt.Sprintf("%s_%s.json", filename, collectionName)
-		fmt.Fprintln(writerScriptBash, fmt.Sprintf("mongoimport --host $MONGO_SERVER --db %s --collection %s < %s", context.dbName, collectionName, importScriptFilename))
-		fmt.Fprintln(writerScriptBat, fmt.Sprintf("mongoimport --host %sMONGO_SERVER%s --db %s --collection %s < %s", "%", "%", context.dbName, collectionName, importScriptFilename))
-		importScript := openFileOrFatal(importScriptFilename)
-		defer importScript.Close()
-		writerImportScript := bufio.NewWriter(importScript)
-
-		for id, _ := range ids.Ids {
-			fmt.Fprintf(writerJsRemovalScript, "db.%s.remove({\"_id\":ObjectId(\"%s\")});\n", collectionName, id.Hex())
-
-			context.dumpJsonToFile(collectionName, id, writerImportScript)
-		}
+	// JavaScript creation from template
+	removalJsScript := openFileOrFatal(filename + "_clean.js")
+	defer removalJsScript.Close()
+	writerJsRemovalScript := bufio.NewWriter(removalJsScript)
+	defer writerJsRemovalScript.Flush()
+	template, err = template.New("data/template_js").Parse(string(MustAsset("data/template_js")))
+	if err != nil {
+		log.Fatalf("Template couldn't be parsed", err)
 	}
+	template.Execute(writerJsRemovalScript, templateData)
 }
 
 func (context *Context) dumpJsonToFile(collectionName string, id bson.ObjectId, writerImportScript *bufio.Writer) {

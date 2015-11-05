@@ -2,6 +2,7 @@
 // sources:
 // data/template_bash
 // data/template_bat
+// data/template_js
 // DO NOT EDIT!
 
 package main
@@ -50,6 +51,24 @@ func dataTemplate_bash() (*asset, error) {
 func dataTemplate_bat() (*asset, error) {
 	path := "/opt/go/src/github.com/milanaleksic/mongodiff/data/template_bat"
 	name := "data/template_bat"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
+// dataTemplate_js reads file data from disk. It returns an error on failure.
+func dataTemplate_js() (*asset, error) {
+	path := "/opt/go/src/github.com/milanaleksic/mongodiff/data/template_js"
+	name := "data/template_js"
 	bytes, err := bindataRead(path, name)
 	if err != nil {
 		return nil, err
@@ -118,6 +137,7 @@ func AssetNames() []string {
 var _bindata = map[string]func() (*asset, error){
 	"data/template_bash": dataTemplate_bash,
 	"data/template_bat": dataTemplate_bat,
+	"data/template_js": dataTemplate_js,
 }
 
 // AssetDir returns the file names below a certain
@@ -164,6 +184,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"template_bash": &bintree{dataTemplate_bash, map[string]*bintree{
 		}},
 		"template_bat": &bintree{dataTemplate_bat, map[string]*bintree{
+		}},
+		"template_js": &bintree{dataTemplate_js, map[string]*bintree{
 		}},
 	}},
 }}

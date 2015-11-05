@@ -6,3 +6,6 @@ then
      exit
 fi
 
+{{range $change := .CollectionChanges}}
+mongoimport --host $MONGO_SERVER --db {{$.DbName}} --collection {{$change.CollectionName}} < {{$change.ImportScriptName}}
+{{end}}

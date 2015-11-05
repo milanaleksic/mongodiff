@@ -3,3 +3,6 @@
 mongo %MONGO_SERVER%/{{.DbName}} {{.Filename}}_clean.js
 IF "%1" == "clean" EXIT /B 0
 
+{{range $change := .CollectionChanges}}
+mongoimport --host %MONGO_SERVER% --db {{$.DbName}} --collection {{$change.CollectionName}} < {{$change.ImportScriptName}}
+{{end}}
