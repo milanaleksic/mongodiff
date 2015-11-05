@@ -118,22 +118,25 @@ func (context *Context) presentDiffData(diffData Data) {
 func openFileOrFatal(filename string) (file *os.File) {
 	file, err := os.Create(filename)
 	if err != nil {
-		log.Fatalf("Could not open file for saving", filename)
+		log.Fatalf("Could not open file for saving: %s; error: %s", filename, err)
 	}
 	return
 }
 
+type TemplateData struct {
+	DbName            string
+	Filename          string
+	CollectionChanges []CollectionChange
+}
+
+type CollectionChange struct {
+	CollectionName   string
+	ImportScriptName string
+	AddedIds         []string
+}
+
 func (context *Context) makeScriptFiles(filename string, diffData Data) {
-	//TODO: use events for this instead of hardcoding files
-	templateData := struct {
-		DbName            string
-		Filename          string
-		CollectionChanges []struct {
-			CollectionName   string
-			ImportScriptName string
-			AddedIds         []string
-		}
-	}{
+	templateData := TemplateData{
 		DbName: context.dbName, Filename: filename,
 	}
 
@@ -148,49 +151,14 @@ func (context *Context) makeScriptFiles(filename string, diffData Data) {
 			newIds = append(newIds, id.Hex())
 			context.dumpJsonToFile(collectionName, id, writerImportScript)
 		}
-
-		templateData.CollectionChanges = append(templateData.CollectionChanges, struct {
-			CollectionName   string
-			ImportScriptName string
-			AddedIds         []string
-		}{
+		templateData.CollectionChanges = append(templateData.CollectionChanges, CollectionChange{
 			collectionName, importScriptFilename, newIds,
 		})
 	}
 
-	// BASH creation from template
-	scriptBash := openFileOrFatal(filename + ".sh")
-	scriptBash.Chmod(0777)
-	defer scriptBash.Close()
-	writerScriptBash := bufio.NewWriter(scriptBash)
-	defer writerScriptBash.Flush()
-	template, err := template.New("data/template_bash").Parse(string(MustAsset("data/template_bash")))
-	if err != nil {
-		log.Fatalf("Template couldn't be parsed", err)
-	}
-	template.Execute(writerScriptBash, templateData)
-
-	// BAT creation from template
-	scriptBat := openFileOrFatal(filename + ".bat")
-	defer scriptBat.Close()
-	writerScriptBat := bufio.NewWriter(scriptBat)
-	defer writerScriptBat.Flush()
-	template, err = template.New("data/template_bat").Parse(string(MustAsset("data/template_bat")))
-	if err != nil {
-		log.Fatalf("Template couldn't be parsed", err)
-	}
-	template.Execute(writerScriptBat, templateData)
-
-	// JavaScript creation from template
-	removalJsScript := openFileOrFatal(filename + "_clean.js")
-	defer removalJsScript.Close()
-	writerJsRemovalScript := bufio.NewWriter(removalJsScript)
-	defer writerJsRemovalScript.Flush()
-	template, err = template.New("data/template_js").Parse(string(MustAsset("data/template_js")))
-	if err != nil {
-		log.Fatalf("Template couldn't be parsed", err)
-	}
-	template.Execute(writerJsRemovalScript, templateData)
+	writeTemplate(&templateData, filename+"_clean.js", "data/template_js", 0600)
+	writeTemplate(&templateData, filename+".bat", "data/template_bat", 0600)
+	writeTemplate(&templateData, filename+".sh", "data/template_bash", 0700)
 }
 
 func (context *Context) dumpJsonToFile(collectionName string, id bson.ObjectId, writerImportScript *bufio.Writer) {
@@ -210,4 +178,17 @@ func (context *Context) dumpJsonToFile(collectionName string, id bson.ObjectId, 
 	}
 	fmt.Fprintf(writerImportScript, "%s\n", out)
 	writerImportScript.Flush()
+}
+
+func writeTemplate(templateData *TemplateData, filename string, templateName string, mode os.FileMode) {
+	file := openFileOrFatal(filename)
+	file.Chmod(mode)
+	defer file.Close()
+	fileWriter := bufio.NewWriter(file)
+	defer fileWriter.Flush()
+	template, err := template.New(templateName).Parse(string(MustAsset(templateName)))
+	if err != nil {
+		log.Fatalf("Template couldn't be parsed", err)
+	}
+	template.Execute(fileWriter, templateData)
 }

@@ -83,10 +83,10 @@ func TestDiffDetection(t *testing.T) {
 		t.FailNow()
 	}
 	context.makeScriptFiles("testing", diffData)
-	defer os.Remove("./testing_clean.js")
-	defer os.Remove("./testing_diffTest.json")
-	defer os.Remove("./testing.sh")
-	defer os.Remove("./testing.bat")
+	//defer os.Remove("./testing_clean.js")
+	//defer os.Remove("./testing_diffTest.json")
+	//defer os.Remove("./testing.sh")
+	//defer os.Remove("./testing.bat")
 
 	data, err := ioutil.ReadFile("./testing_diffTest.json")
 	if err != nil {
