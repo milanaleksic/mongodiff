@@ -22,7 +22,7 @@ git tag $1
 git push --tags
 
 echo Creating release
-github-release release -u milanaleksic -r mongodiff --tag $1 --name "v$1"
+github-release release -u milanaleksic -r mongodiff --tag "$1" --name "v$1"
 
 # $1 - os
 # $2 - suffix for executables
