@@ -60,6 +60,7 @@ func TestDiffDetection(t *testing.T) {
 	context := Context{
 		dbName: "test",
 		host:   "localhost",
+		prefix: "testing",
 	}
 	context.connect()
 	defer context.close()
@@ -82,11 +83,11 @@ func TestDiffDetection(t *testing.T) {
 		t.Error("Could not find expected ID in the diff!", len(diffData["diffTest"].Ids))
 		t.FailNow()
 	}
-	context.makeScriptFiles("testing", diffData)
-	//defer os.Remove("./testing_clean.js")
-	//defer os.Remove("./testing_diffTest.json")
-	//defer os.Remove("./testing.sh")
-	//defer os.Remove("./testing.bat")
+	context.makeScriptFiles(diffData)
+	defer os.Remove("./testing_clean.js")
+	defer os.Remove("./testing_diffTest.json")
+	defer os.Remove("./testing.sh")
+	defer os.Remove("./testing.bat")
 
 	data, err := ioutil.ReadFile("./testing_diffTest.json")
 	if err != nil {

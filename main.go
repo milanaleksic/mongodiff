@@ -28,6 +28,7 @@ func main() {
 		host:     *host,
 		dbName:   *dbName,
 		excludes: *excludes,
+		prefix: *fileOutput,
 	}
 	context.connect()
 	defer context.close()
@@ -44,7 +45,7 @@ func main() {
 		fmt.Println(redFormat("No changes detected!"))
 	} else {
 		context.presentDiffData(diffData)
-		context.makeScriptFiles(*fileOutput, diffData)
+		context.makeScriptFiles(diffData)
 	}
 }
 

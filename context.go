@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"text/template"
 )
 
 type CollectionItem struct {
@@ -29,6 +28,7 @@ type Context struct {
 	host     string
 	dbName   string
 	excludes string
+	prefix   string
 }
 
 func (context *Context) connect() {
@@ -123,25 +123,13 @@ func openFileOrFatal(filename string) (file *os.File) {
 	return
 }
 
-type TemplateData struct {
-	DbName            string
-	Filename          string
-	CollectionChanges []CollectionChange
-}
-
-type CollectionChange struct {
-	CollectionName   string
-	ImportScriptName string
-	AddedIds         []string
-}
-
-func (context *Context) makeScriptFiles(filename string, diffData Data) {
+func (context *Context) makeScriptFiles(diffData Data) {
 	templateData := TemplateData{
-		DbName: context.dbName, Filename: filename,
+		DbName: context.dbName, Filename: context.prefix,
 	}
 
 	for collectionName, ids := range diffData {
-		importScriptFilename := fmt.Sprintf("%s_%s.json", filename, collectionName)
+		importScriptFilename := fmt.Sprintf("%s_%s.json", context.prefix, collectionName)
 		importScript := openFileOrFatal(importScriptFilename)
 		defer importScript.Close()
 		writerImportScript := bufio.NewWriter(importScript)
@@ -155,10 +143,7 @@ func (context *Context) makeScriptFiles(filename string, diffData Data) {
 			collectionName, importScriptFilename, newIds,
 		})
 	}
-
-	writeTemplate(&templateData, filename+"_clean.js", "data/template_js", 0600)
-	writeTemplate(&templateData, filename+".bat", "data/template_bat", 0600)
-	writeTemplate(&templateData, filename+".sh", "data/template_bash", 0700)
+	templateData.WriteTemplates()
 }
 
 func (context *Context) dumpJsonToFile(collectionName string, id bson.ObjectId, writerImportScript *bufio.Writer) {
@@ -178,17 +163,4 @@ func (context *Context) dumpJsonToFile(collectionName string, id bson.ObjectId, 
 	}
 	fmt.Fprintf(writerImportScript, "%s\n", out)
 	writerImportScript.Flush()
-}
-
-func writeTemplate(templateData *TemplateData, filename string, templateName string, mode os.FileMode) {
-	file := openFileOrFatal(filename)
-	file.Chmod(mode)
-	defer file.Close()
-	fileWriter := bufio.NewWriter(file)
-	defer fileWriter.Flush()
-	template, err := template.New(templateName).Parse(string(MustAsset(templateName)))
-	if err != nil {
-		log.Fatalf("Template couldn't be parsed", err)
-	}
-	template.Execute(fileWriter, templateData)
 }
