@@ -31,10 +31,10 @@ This is `#golang` project. I used Go 1.5. `go get github.com/milanaleksic/mongod
 
 To deploy I used also additional `go`-driven utilities:
 
-1. go-bindata
-2. github-release
-3. upx 3.91
-4. goupx (goes around bug of upx-ing linux golang-generated binaries)
+1. `go get github.com/aktau/github-release`
+2. `go get github.com/jteeuwen/go-bindata`
+3. `go get github.com/pwaller/goupx` (goes around bug of upx-ing linux golang-generated binaries)
+4. upx 3.91
 
 ### Testing
 
