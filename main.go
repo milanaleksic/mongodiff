@@ -19,7 +19,7 @@ func main() {
 
 	var host *string = flag.String("host", "127.0.0.1", "host to connect to, defaults to localhost")
 	var fileOutput *string = flag.String("fileOutput", "setup", "Prefix to use for all files to use as target dump of the setup script")
-	var waitForSignal *bool = flag.Bool("waitForSignal", true, "should program wait for Ctrl+Z before it fetches changes from DB?")
+	var waitForSignal *bool = flag.Bool("waitForSignal", true, "should program wait for Ctrl+C before it fetches changes from DB?")
 	var dbName *string = flag.String("db", "test", "Which DB to monitor")
 	var excludes *string = flag.String("excludes", "", "Which collections to ignore")
 	flag.Parse()
