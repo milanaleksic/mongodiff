@@ -5,12 +5,12 @@ This utility makes a script to reproduce manual actions done on a Mongo DB.
 It makes internally a simple diff (*only new items* are being detected, updates are ignored currently).
 
 As a result, one should get `BASH`, `BAT`, `JS` and `JSON` files that alltogether work to reproduce actions when it's needed.
- 
+
 To see what options are available, please run application with `--help` parameter
 
 ## How do generated scripts know on which server they need to execute insertions?
 
-They don't. You have to set up the env variable "MONGO_SERVER" to some IP/host name before you run the shell/batch file.
+They don't. give the server as script parameter (use -s|--server for *nix) or set the env variable "MONGO_SERVER" to some IP/host name before you run the shell/batch file.
 
 ## Why?
 
