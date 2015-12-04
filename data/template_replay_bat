@@ -1,21 +1,26 @@
 @echo off
 
 IF "%1"=="" GOTO CHECK_ENV
-
 SETLOCAL
 SET MONGO_SERVER=%1
 
-:RUN_SCRIPT
-mongo %MONGO_SERVER%/{{.DbName}} {{.Filename}}_clean.js
-IF "%1" == "clean" EXIT /B 0
 
+
+:RUN_SCRIPT
+echo "Cleaning mongodiff-induced changes from %MONGO_SERVER%"
+mongo %MONGO_SERVER%/{{.DbName}} {{.Filename}}_clean.js
+
+echo "Replaying diff"
 {{range $change := .CollectionChanges}}
+echo "    Replaying changes done in {{$change.CollectionName}}"
 mongoimport --host %MONGO_SERVER% --db {{$.DbName}} --collection {{$change.CollectionName}} < {{$change.ImportScriptName}}
 {{end}}
 
-EXIT/B 0
+EXIT /B 0
+
+
 
 :CHECK_ENV
 IF NOT "%MONGO_SERVER%" == "" GOTO RUN_SCRIPT
-ECHO "No server URL given as parameter"
+ECHO "No Mongo server defined, either give server as parameter to this script or set MONGO_SERVER environment variable"
 EXIT /B 1

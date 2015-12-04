@@ -27,8 +27,10 @@ type templateConfiguration struct {
 
 var templateConfigurations = []templateConfiguration {
 	{"{{.Filename}}_clean.js", "data/template_js", 0600, },
-	{"{{.Filename}}.bat", "data/template_bat", 0600, },
-	{"{{.Filename}}.sh", "data/template_bash", 0700, },
+	{"{{.Filename}}.bat", "data/template_replay_bat", 0600, },
+	{"{{.Filename}}.sh", "data/template_replay_bash", 0700, },
+	{"{{.Filename}}_clean.bat", "data/template_clean_bat", 0600, },
+	{"{{.Filename}}_clean.sh", "data/template_clean_bash", 0700, },
 }
 
 func (templateData *TemplateData) WriteTemplates() {

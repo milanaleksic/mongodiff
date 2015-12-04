@@ -13,18 +13,110 @@ import (
 )
 
 func TestDiffDetection(t *testing.T) {
+	havingMongoServerRunningInTheBackground(t)
+	preFile := havingTestDataRemovalScript(t)
+	defer os.Remove(preFile.Name())
+	postFile := havingTestDataInjectionScript(t)
+	defer os.Remove(postFile.Name())
+	context := havingContextInstance()
+	defer context.close()
+
+	diffData := thenCalculationOfDeltaIsHavingOnlyOneChange(t, context,
+		func() { run("mongo", "localhost:27017/test", preFile.Name()) },
+		func() { run("mongo", "localhost:27017/test", postFile.Name()) })
+
+	context.makeScriptFiles(diffData)
+	defer os.Remove("./testing_clean.js")
+	defer os.Remove("./testing_diffTest.json")
+	defer os.Remove("./testing.sh")
+	defer os.Remove("./testing.bat")
+	defer os.Remove("./testing_clean.sh")
+	defer os.Remove("./testing_clean.bat")
+
+	thenDiffJsonHasExpectedChange(t)
+
+	thenCalculationOfDeltaIsHavingOnlyOneChange(t, context, func() {
+		os.Setenv("MONGO_SERVER", "localhost")
+		run("mongo", "localhost:27017/test", preFile.Name())
+	}, func() {
+		if runtime.GOOS == "windows" {
+			run("testing_clean.bat")
+			run("testing.bat")
+		} else if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+			run("chmod", "+x", "./testing_clean.sh")
+			run("/bin/bash", "./testing_clean.sh")
+			run("chmod", "+x", "./testing.sh")
+			run("/bin/bash", "./testing.sh")
+		} else {
+			t.Error("Can't complete test since this platform is not supported: only linux and windows are supported")
+			t.FailNow()
+		}
+	})
+}
+
+func TestDiffDetectionViaParameter(t *testing.T) {
+	havingMongoServerRunningInTheBackground(t)
+	preFile := havingTestDataRemovalScript(t)
+	defer os.Remove(preFile.Name())
+	postFile := havingTestDataInjectionScript(t)
+	defer os.Remove(postFile.Name())
+	context := havingContextInstance()
+	defer context.close()
+
+	diffData := thenCalculationOfDeltaIsHavingOnlyOneChange(t, context,
+		func() { run("mongo", "localhost:27017/test", preFile.Name()) },
+		func() { run("mongo", "localhost:27017/test", postFile.Name()) })
+
+	context.makeScriptFiles(diffData)
+	defer os.Remove("./testing_clean.js")
+	defer os.Remove("./testing_diffTest.json")
+	defer os.Remove("./testing.sh")
+	defer os.Remove("./testing.bat")
+	defer os.Remove("./testing_clean.sh")
+	defer os.Remove("./testing_clean.bat")
+
+	thenDiffJsonHasExpectedChange(t)
+
+	thenCalculationOfDeltaIsHavingOnlyOneChange(t, context, func() {
+		run("mongo", "localhost:27017/test", preFile.Name())
+	}, func() {
+		if runtime.GOOS == "windows" {
+			run("testing_clean.bat", "localhost")
+			run("testing.bat", "localhost")
+		} else if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+			run("chmod", "+x", "./testing_clean.sh", "localhost")
+			run("/bin/bash", "./testing_clean.sh", "localhost")
+			run("chmod", "+x", "./testing.sh", "localhost")
+			run("/bin/bash", "./testing.sh", "localhost")
+		} else {
+			t.Error("Can't complete test since this platform is not supported: only linux and windows are supported")
+			t.FailNow()
+		}
+	})
+}
+
+func run(name string, args ...string) {
+	out, err := exec.Command(name, args...).Output()
+	if err != nil {
+		fmt.Errorf("Failed when running", name, "with args", args, ":", err, "output:", string(out))
+	}
+	fmt.Println(greenFormat(fmt.Sprintf("Output of command %s with args %s %s\n", name, args, out)))
+}
+
+func havingTestDataRemovalScript(t *testing.T) (preFile *os.File) {
 	preFile, err := ioutil.TempFile("", "test_pre")
 	if err != nil {
 		t.Error("Could not open temp file", err)
 	}
-	defer os.Remove(preFile.Name())
 	preFile.WriteString(`db.diffTest.remove({ "_id" : ObjectId("501ca04b668d67b3d6489f3a") });`)
+	return
+}
 
+func havingTestDataInjectionScript(t *testing.T) (postFile *os.File) {
 	postFile, err := ioutil.TempFile("", "test_post")
 	if err != nil {
 		t.Error("Could not open temp file", err)
 	}
-	defer os.Remove(postFile.Name())
 	postFile.WriteString(`
 		db.diffTest.insert({
 			"_id" : ObjectId("501ca04b668d67b3d6489f3a"),
@@ -49,27 +141,24 @@ func TestDiffDetection(t *testing.T) {
 			]
 		});
 	`)
+	return
+}
 
+func havingMongoServerRunningInTheBackground(t *testing.T) {
 	conn, err := net.Dial("tcp", "localhost:27017")
+	defer conn.Close()
 	if err != nil {
 		t.Error("Test can't be executed without running Mongo process")
 		t.FailNow()
 	}
-	conn.Close()
+}
 
-	context := Context{
-		dbName: "test",
-		host:   "localhost",
-		prefix: "testing",
-	}
-	context.connect()
-	defer context.close()
-
-	run("mongo", "localhost:27017/test", preFile.Name())
+func thenCalculationOfDeltaIsHavingOnlyOneChange(t *testing.T, context *Context, preHook func(), changeHook func()) (diffData Data) {
+	preHook()
 	beforeData := context.collectData()
-	run("mongo", "localhost:27017/test", postFile.Name())
+	changeHook()
 	afterData := context.collectData()
-	diffData := context.diffData(beforeData, afterData)
+	diffData = context.diffData(beforeData, afterData)
 
 	if len(diffData) != 1 {
 		t.Error("Expected one element in diff!", len(diffData))
@@ -83,12 +172,10 @@ func TestDiffDetection(t *testing.T) {
 		t.Error("Could not find expected ID in the diff!", len(diffData["diffTest"].Ids))
 		t.FailNow()
 	}
-	context.makeScriptFiles(diffData)
-	defer os.Remove("./testing_clean.js")
-	defer os.Remove("./testing_diffTest.json")
-	defer os.Remove("./testing.sh")
-	defer os.Remove("./testing.bat")
+	return
+}
 
+func thenDiffJsonHasExpectedChange(t *testing.T) {
 	data, err := ioutil.ReadFile("./testing_diffTest.json")
 	if err != nil {
 		t.Error("Could not verify generated JSON file!", err)
@@ -98,34 +185,14 @@ func TestDiffDetection(t *testing.T) {
 		t.Error("Could not verify generated JS file. Contents:", string(data))
 		t.FailNow()
 	}
-
-	os.Setenv("MONGO_SERVER", "localhost")
-	run("mongo", "localhost:27017/test", preFile.Name())
-	beforeAutoScript := context.collectData()
-	if runtime.GOOS == "windows" {
-		run("testing.bat")
-	} else if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		run("chmod", "+x", "./testing.sh")
-		run("/bin/bash", "./testing.sh")
-	} else {
-		t.Error("Can't complete test since this platform is not supported: only linux and windows are supported")
-		t.FailNow()
-	}
-
-	afterAutoScript := context.collectData()
-
-	diffData = context.diffData(beforeAutoScript, afterAutoScript)
-
-	if len(diffData) != 1 {
-		t.Error("Expected one element in diff!", len(diffData))
-		t.FailNow()
-	}
 }
 
-func run(name string, args ...string) {
-	out, err := exec.Command(name, args...).Output()
-	if err != nil {
-		fmt.Errorf("Failed when running", name, "with args", args, ":", err, "output:", string(out))
+func havingContextInstance() (context *Context) {
+	context = &Context{
+		dbName: "test",
+		host:   "localhost",
+		prefix: "testing",
 	}
-	fmt.Println(greenFormat(fmt.Sprintf("Output of command %s with args %s %s\n", name, args, out)))
+	context.connect()
+	return
 }

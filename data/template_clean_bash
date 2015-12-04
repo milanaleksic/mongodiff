@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ $# -gt 0 ]]; then
+   MONGO_SERVER="$1"
+fi
+
+if [ -z "$MONGO_SERVER" ]; then
+    echo "No Mongo server defined, either give server as parameter to this script or set \$MONGO_SERVER environment variable" >&2
+    exit 1
+fi
+
+echo "Cleaning mongodiff-induced changes from $MONGO_SERVER"
+mongo $MONGO_SERVER/{{.DbName}} {{.Filename}}_clean.js
