@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"net"
 )
 
 type CollectionItem struct {
@@ -29,6 +30,19 @@ type Context struct {
 	dbName   string
 	excludes string
 	prefix   string
+}
+
+func (context *Context) checkMongoUp() (err error) {
+	target := context.host
+	if !strings.Contains(target, ":") {
+		target = target + "27017"
+	}
+	conn, err := net.Dial("tcp", target)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	return
 }
 
 func (context *Context) connect() {

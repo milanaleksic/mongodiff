@@ -30,6 +30,10 @@ func main() {
 		excludes: *excludes,
 		prefix: *fileOutput,
 	}
+	if err := context.checkMongoUp(); err != nil {
+		fmt.Println("Mongo is not up!")
+		os.Exit(1)
+	}
 	context.connect()
 	defer context.close()
 

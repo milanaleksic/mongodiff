@@ -146,11 +146,11 @@ func havingTestDataInjectionScript(t *testing.T) (postFile *os.File) {
 
 func havingMongoServerRunningInTheBackground(t *testing.T) {
 	conn, err := net.Dial("tcp", "localhost:27017")
-	defer conn.Close()
 	if err != nil {
 		t.Error("Test can't be executed without running Mongo process")
 		t.FailNow()
 	}
+	defer conn.Close()
 }
 
 func thenCalculationOfDeltaIsHavingOnlyOneChange(t *testing.T, context *Context, preHook func(), changeHook func()) (diffData Data) {
