@@ -7,7 +7,7 @@ SET MONGO_SERVER=%1
 
 
 :RUN_SCRIPT
-echo "Cleaning mongodiff-induced changes from %MONGO_SERVER%"
+echo Cleaning mongodiff-induced changes from %MONGO_SERVER%
 mongo %MONGO_SERVER%/{{.DbName}} {{.Filename}}_clean.js
 
 EXIT /B 0
@@ -16,5 +16,5 @@ EXIT /B 0
 
 :CHECK_ENV
 IF NOT "%MONGO_SERVER%" == "" GOTO RUN_SCRIPT
-ECHO "No Mongo server defined, either give server as parameter to this script or set MONGO_SERVER environment variable"
+ECHO No Mongo server defined, either give server as parameter to this script or set MONGO_SERVER environment variable
 EXIT /B 1
