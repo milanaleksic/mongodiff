@@ -1,9 +1,38 @@
 #!/bin/bash
-mongo $MONGO_SERVER/{{.DbName}} {{.Filename}}_clean.js
-if [ "$1" = "clean" ]
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    shift
+    case $key in
+        clean)
+            CLEAN="$key"
+        ;;
+        -s|--server)
+            if [[ -n "$1" && "$1" != --* ]]; then
+                MONGO_SERVER="$1"
+                shift
+            else
+                echo "No server url given with $key" >&2
+                exit 1
+            fi
+        ;;
+        *)
+            echo "Unknown option: \"$key\""  # unknown option
+            exit 1
+        ;;
+    esac
+done
+
+if [ -z "$MONGO_SERVER" ]; then
+    echo "No Mongo server defined, use either -s|--server parameter or \$MONGO_SERVER environment variable" >&2
+    exit 1
+fi
+
+if [ "$CLEAN" = "clean" ]
 then
-     echo "Only cleaning requested"
-     exit
+    echo "Only cleaning requested"
+     mongo $MONGO_SERVER/{{.DbName}} {{.Filename}}_clean.js
+     exit 0
 fi
 
 {{range $change := .CollectionChanges}}
