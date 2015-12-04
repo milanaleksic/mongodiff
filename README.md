@@ -15,6 +15,7 @@ They don't, you should either:
 1. give the server as script parameter; or 
 2. set the env variable `MONGO_SERVER` to some IP/host name before you run the shell/batch file.
 
+For example:
 
     clean.bat localhost
     setup.bat 192.168.1.101:27117
