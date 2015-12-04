@@ -1,16 +1,23 @@
 # Record & replay changes to a MongoDB
 
-This utility makes a script to reproduce manual actions done on a Mongo DB.
+This utility makes Windows and Linux scripts to reproduce manual actions done on a Mongo DB (or actions that are result of some script / acceptance test).
 
 It makes internally a simple diff (*only new items* are being detected, updates are ignored currently).
 
-As a result, one should get `BASH`, `BAT`, `JS` and `JSON` files that alltogether work to reproduce actions when it's needed.
+As a result, one should get `BASH`, `BAT`, `JS` and `JSON` files that altogether work to reproduce actions when it's needed.
 
 To see what options are available, please run application with `--help` parameter
 
 ## How do generated scripts know on which server they need to execute insertions?
 
-They don't. give the server as script parameter (use -s|--server for *nix) or set the env variable "MONGO_SERVER" to some IP/host name before you run the shell/batch file.
+They don't, you should either:
+
+1. give the server as script parameter; or 
+2. set the env variable `MONGO_SERVER` to some IP/host name before you run the shell/batch file.
+
+
+    clean.bat localhost
+    setup.bat 192.168.1.101:27117
 
 ## Why?
 
