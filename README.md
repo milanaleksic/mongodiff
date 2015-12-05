@@ -31,13 +31,10 @@ This is `#golang` project. I used Go 1.5.
 
 `go get github.com/milanaleksic/mongodiff` should be enough to get the code and build. 
 
-I also use these utilities for various stages of post-compilation drvelopment:
+I also use these utilities for various stages of post-compilation development:
 
 1. `go get github.com/aktau/github-release`
 2. `go get github.com/jteeuwen/go-bindata`
 3. `go get github.com/pwaller/goupx` (goes around bug of upx-ing linux golang-generated binaries)
 4. upx 3.91
 
-### Testing
-
-I made only a trivial sanity-checking test that *demands Mongo running* - otherwise test will fail.
