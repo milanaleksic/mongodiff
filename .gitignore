@@ -27,3 +27,6 @@ _testmain.go
 # Created by .ignore support plugin (hsz.mobi)
 mongodiff
 mongodiff.exe
+
+bindata_debug.go
+bindata_release.go
