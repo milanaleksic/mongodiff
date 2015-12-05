@@ -25,11 +25,13 @@ For example:
 Weekly Scrum Demos. This tool makes it a breeze for most cases which might otherwise take too much preparation.
 
 
-## Build/release preconditions
+## Building, tagging and artifact deployment
 
-This is `#golang` project. I used Go 1.5. `go get github.com/milanaleksic/mongodiff` should be enough.
+This is `#golang` project. I used Go 1.5. 
 
-To deploy I used also additional `go`-driven utilities:
+`go get github.com/milanaleksic/mongodiff` should be enough to get the code and build. 
+
+I also use these utilities for various stages of post-compilation drvelopment:
 
 1. `go get github.com/aktau/github-release`
 2. `go get github.com/jteeuwen/go-bindata`
@@ -38,4 +40,4 @@ To deploy I used also additional `go`-driven utilities:
 
 ### Testing
 
-I made only a trivial sanity-checking test that demands Mongo running - otherwise test will fail.
+I made only a trivial sanity-checking test that *demands Mongo running* - otherwise test will fail.
