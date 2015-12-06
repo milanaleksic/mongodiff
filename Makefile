@@ -48,7 +48,9 @@ test:
 	go test
 
 .PHONY: ci
-ci: ${APP_NAME}
+ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
+	go get ./...
+	go build -o ${APP_NAME}
 
 ${BINDATA_DEBUG_FILE}: ${SOURCES_DATA}
 	rm -rf ${BINDATA_RELEASE_FILE}
@@ -63,7 +65,6 @@ prepare: ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
 	upx
-	go get ./...
 
 ${GOPATH}/bin/goupx:
 	go get github.com/pwaller/goupx
