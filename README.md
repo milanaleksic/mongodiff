@@ -19,11 +19,11 @@ For example:
 
     clean.bat localhost
     setup.bat 192.168.1.101:27117
+    MONGO_SERVER=127.0.0.1 setup.sh
 
 ## Why?
 
 Weekly Scrum Demos. This tool makes it a breeze for most cases which might otherwise take too much preparation.
-
 
 ## Building, tagging and artifact deployment
 
@@ -31,10 +31,10 @@ This is `#golang` project. I used Go 1.5.
 
 `go get github.com/milanaleksic/mongodiff` should be enough to get the code and build. 
 
-I also use these utilities for various stages of post-compilation development:
+To build project you can execute:
 
-1. `go get github.com/aktau/github-release`
-2. `go get github.com/jteeuwen/go-bindata`
-3. `go get github.com/pwaller/goupx` (goes around bug of upx-ing linux golang-generated binaries)
-4. upx 3.91
+This will get from internet all 3rd party utilites needed for deployment (upx, go-upx, github-release)
 
+    make prepare
+
+You can start building project using `make`, even `deploy` to Github (if you have privileges to do that of course).
