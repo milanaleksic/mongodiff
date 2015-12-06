@@ -2,5 +2,7 @@ language: go
 
 install: make prepare
 
+script: make ci
+
 go:
   - 1.5.1

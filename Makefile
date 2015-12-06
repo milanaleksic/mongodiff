@@ -11,6 +11,7 @@ SOURCES_DATA := $(shell find $(DATA_DIR))
 .DEFAULT_GOAL: ${APP_NAME}
 
 ${APP_NAME}: ${BINDATA_DEBUG_FILE} $(SOURCES)
+	go get ./...
 	go build -o ${APP_NAME}
 
 .PHONY: deploy
