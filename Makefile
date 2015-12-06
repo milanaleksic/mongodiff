@@ -74,7 +74,7 @@ ${GOPATH}/bin/go-bindata:
 	go get github.com/jteeuwen/go-bindata/go-bindata
 
 upx:
-	curl http://upx.sourceforge.net/download/upx-3.91-amd64_linux.tar.bz2 | tar xjvf - && sudo mv upx-3.91-amd64_linux/upx upx && rm -rf upx-3.91-amd64_linux
+	curl http://upx.sourceforge.net/download/upx-3.91-amd64_linux.tar.bz2 | tar xjvf - && mv upx-3.91-amd64_linux/upx upx && rm -rf upx-3.91-amd64_linux
 
 .PHONY: clean
 clean:
