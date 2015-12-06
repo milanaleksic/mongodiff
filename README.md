@@ -1,5 +1,7 @@
 # Record & replay changes to a MongoDB
 
+[![Build Status](https://travis-ci.org/milanaleksic/mongodiff.svg?branch=master)](https://travis-ci.org/milanaleksic/mongodiff)
+
 This utility makes Windows and Linux scripts to reproduce manual actions done on a Mongo DB (or actions that are result of some script / acceptance test).
 
 It makes internally a simple diff (*only new items* are being detected, updates are ignored currently).
