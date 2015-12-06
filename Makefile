@@ -84,3 +84,4 @@ clean:
 	rm -rf ${BINDATA_DEBUG_FILE}
 	rm -rf ${BINDATA_RELEASE_FILE}
 	rm -rf ${APP_NAME}
+	rm -rf ${APP_NAME}.exe
