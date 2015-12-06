@@ -63,6 +63,7 @@ prepare: ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
 	upx
+	go get ./...
 
 ${GOPATH}/bin/goupx:
 	go get github.com/pwaller/goupx
