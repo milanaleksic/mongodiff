@@ -21,9 +21,11 @@ func TestDiffDetection(t *testing.T) {
 	context := havingContextInstance()
 	defer context.close()
 
-	diffData := thenCalculationOfDeltaIsHavingOnlyOneChange(t, context,
+	diffData := thenCalculationOfDeltaContains(t, context,
 		func() { run("mongo", "localhost:27017/test", preFile.Name()) },
-		func() { run("mongo", "localhost:27017/test", postFile.Name()) })
+		func() { run("mongo", "localhost:27017/test", postFile.Name()) },
+		[]interface{}{bson.ObjectIdHex("501ca04b668d67b3d6489f3a")},
+	)
 
 	context.makeScriptFiles(diffData)
 	defer os.Remove("./testing_clean.js")
@@ -33,9 +35,9 @@ func TestDiffDetection(t *testing.T) {
 	defer os.Remove("./testing_clean.sh")
 	defer os.Remove("./testing_clean.bat")
 
-	thenDiffJsonHasExpectedChange(t)
+	thenDiffJsonHasExpectedChange(t, `"_id":{"$oid":"501ca04b668d67b3d6489f3a"}`)
 
-	thenCalculationOfDeltaIsHavingOnlyOneChange(t, context, func() {
+	thenCalculationOfDeltaContains(t, context, func() {
 		os.Setenv("MONGO_SERVER", "localhost")
 		run("mongo", "localhost:27017/test", preFile.Name())
 	}, func() {
@@ -51,7 +53,7 @@ func TestDiffDetection(t *testing.T) {
 			t.Error("Can't complete test since this platform is not supported: only linux and windows are supported")
 			t.FailNow()
 		}
-	})
+	}, []interface{}{bson.ObjectIdHex("501ca04b668d67b3d6489f3a")})
 }
 
 func TestDiffDetectionViaParameter(t *testing.T) {
@@ -63,9 +65,11 @@ func TestDiffDetectionViaParameter(t *testing.T) {
 	context := havingContextInstance()
 	defer context.close()
 
-	diffData := thenCalculationOfDeltaIsHavingOnlyOneChange(t, context,
+	diffData := thenCalculationOfDeltaContains(t, context,
 		func() { run("mongo", "localhost:27017/test", preFile.Name()) },
-		func() { run("mongo", "localhost:27017/test", postFile.Name()) })
+		func() { run("mongo", "localhost:27017/test", postFile.Name()) },
+		[]interface{}{bson.ObjectIdHex("501ca04b668d67b3d6489f3a")},
+	)
 
 	context.makeScriptFiles(diffData)
 	defer os.Remove("./testing_clean.js")
@@ -75,9 +79,9 @@ func TestDiffDetectionViaParameter(t *testing.T) {
 	defer os.Remove("./testing_clean.sh")
 	defer os.Remove("./testing_clean.bat")
 
-	thenDiffJsonHasExpectedChange(t)
+	thenDiffJsonHasExpectedChange(t, `"_id":{"$oid":"501ca04b668d67b3d6489f3a"}`)
 
-	thenCalculationOfDeltaIsHavingOnlyOneChange(t, context, func() {
+	thenCalculationOfDeltaContains(t, context, func() {
 		run("mongo", "localhost:27017/test", preFile.Name())
 	}, func() {
 		if runtime.GOOS == "windows" {
@@ -92,7 +96,51 @@ func TestDiffDetectionViaParameter(t *testing.T) {
 			t.Error("Can't complete test since this platform is not supported: only linux and windows are supported")
 			t.FailNow()
 		}
-	})
+	}, []interface{}{bson.ObjectIdHex("501ca04b668d67b3d6489f3a")})
+}
+
+func TestDiffDetectionBug5(t *testing.T) {
+	havingMongoServerRunningInTheBackground(t)
+	preFile := havingTestDataRemovalScriptForBug5(t)
+	defer os.Remove(preFile.Name())
+	postFile := havingTestDataInjectionScriptForBug5(t)
+	defer os.Remove(postFile.Name())
+	context := havingContextInstance()
+	defer context.close()
+
+	diffData := thenCalculationOfDeltaContains(t, context,
+		func() { run("mongo", "localhost:27017/test", preFile.Name()) },
+		func() { run("mongo", "localhost:27017/test", postFile.Name()) },
+		[]interface{}{"foo"},
+	)
+
+	context.makeScriptFiles(diffData)
+	defer os.Remove("./testing_clean.js")
+	defer os.Remove("./testing_diffTest.json")
+	defer os.Remove("./testing.sh")
+	defer os.Remove("./testing.bat")
+	defer os.Remove("./testing_clean.sh")
+	defer os.Remove("./testing_clean.bat")
+
+	thenDiffJsonHasExpectedChange(t, `{"_id":"foo"}`)
+
+	thenCalculationOfDeltaContains(t, context, func() {
+		os.Setenv("MONGO_SERVER", "localhost")
+		run("mongo", "localhost:27017/test", preFile.Name())
+	}, func() {
+		if runtime.GOOS == "windows" {
+			run("testing_clean.bat")
+			run("testing.bat")
+		} else if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+			run("chmod", "+x", "./testing_clean.sh")
+			run("/bin/bash", "./testing_clean.sh")
+			run("chmod", "+x", "./testing.sh")
+			run("/bin/bash", "./testing.sh")
+		} else {
+			t.Error("Can't complete test since this platform is not supported: only linux and windows are supported")
+			t.FailNow()
+		}
+	}, []interface{}{"foo"})
 }
 
 func run(name string, args ...string) {
@@ -109,6 +157,15 @@ func havingTestDataRemovalScript(t *testing.T) (preFile *os.File) {
 		t.Error("Could not open temp file", err)
 	}
 	preFile.WriteString(`db.diffTest.remove({ "_id" : ObjectId("501ca04b668d67b3d6489f3a") });`)
+	return
+}
+
+func havingTestDataRemovalScriptForBug5(t *testing.T) (preFile *os.File) {
+	preFile, err := ioutil.TempFile("", "test_pre")
+	if err != nil {
+		t.Error("Could not open temp file", err)
+	}
+	preFile.WriteString(`db.diffTest.remove({ "_id" : "foo" });`)
 	return
 }
 
@@ -144,6 +201,17 @@ func havingTestDataInjectionScript(t *testing.T) (postFile *os.File) {
 	return
 }
 
+func havingTestDataInjectionScriptForBug5(t *testing.T) (postFile *os.File) {
+	postFile, err := ioutil.TempFile("", "test_post")
+	if err != nil {
+		t.Error("Could not open temp file", err)
+	}
+	postFile.WriteString(`
+		db.diffTest.insert({"_id": "foo"});
+	`)
+	return
+}
+
 func havingMongoServerRunningInTheBackground(t *testing.T) {
 	conn, err := net.Dial("tcp", "localhost:27017")
 	if err != nil {
@@ -153,36 +221,38 @@ func havingMongoServerRunningInTheBackground(t *testing.T) {
 	defer conn.Close()
 }
 
-func thenCalculationOfDeltaIsHavingOnlyOneChange(t *testing.T, context *Context, preHook func(), changeHook func()) (diffData Data) {
+func thenCalculationOfDeltaContains(t *testing.T, context *Context, preHook func(), changeHook func(), changeIds []interface{}) (diffData Data) {
 	preHook()
 	beforeData := context.collectData()
 	changeHook()
 	afterData := context.collectData()
 	diffData = context.diffData(beforeData, afterData)
 
-	if len(diffData) != 1 {
-		t.Error("Expected one element in diff!", len(diffData))
+	if len(diffData) != len(changeIds) {
+		t.Error("Expected this many elements in diff:", len(changeIds), "but was:", len(diffData))
 		t.FailNow()
 	}
-	if len(diffData["diffTest"].Ids) != 1 {
-		t.Error("Expected one Id in diff!", len(diffData["diffTest"].Ids))
+	if len(diffData["diffTest"].Ids) != len(changeIds) {
+		t.Error("Expected this many elements in diff:", len(changeIds), "but was:", len(diffData["diffTest"].Ids))
 		t.FailNow()
 	}
-	if !diffData["diffTest"].Ids[bson.ObjectIdHex("501ca04b668d67b3d6489f3a")] {
-		t.Error("Could not find expected ID in the diff!", len(diffData["diffTest"].Ids))
-		t.FailNow()
+	for _, id := range changeIds {
+		if !diffData["diffTest"].Ids[id] {
+			t.Error("Could not find expected ID in the diff!", len(diffData["diffTest"].Ids))
+			t.FailNow()
+		}
 	}
 	return
 }
 
-func thenDiffJsonHasExpectedChange(t *testing.T) {
+func thenDiffJsonHasExpectedChange(t *testing.T, contents string) {
 	data, err := ioutil.ReadFile("./testing_diffTest.json")
 	if err != nil {
 		t.Error("Could not verify generated JSON file!", err)
 		t.FailNow()
 	}
-	if !strings.Contains(string(data), "$oid") {
-		t.Error("Could not verify generated JS file. Contents:", string(data))
+	if !strings.Contains(string(data), contents) {
+		t.Error("Could not verify generated JS file. Contents:", string(data), "expected:", contents)
 		t.FailNow()
 	}
 }

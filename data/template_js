@@ -1,5 +1,5 @@
 {{range $change := .CollectionChanges}}
 {{range $addedId := $change.AddedIds}}
-db.{{$change.CollectionName}}.remove({"_id":ObjectId("{{$addedId}}")});
+db.{{$change.CollectionName}}.remove({"_id":{{$addedId}}});
 {{end}}
 {{end}}

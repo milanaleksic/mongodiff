@@ -14,11 +14,11 @@ import (
 )
 
 type CollectionItem struct {
-	Id bson.ObjectId "_id"
+	Id interface{} "_id"
 }
 
 type CollectionIds struct {
-	Ids map[bson.ObjectId]bool
+	Ids map[interface{}]bool
 }
 
 type Data map[string]CollectionIds
@@ -72,7 +72,7 @@ outer:
 				continue outer
 			}
 		}
-		ids := make(map[bson.ObjectId]bool, 0)
+		ids := make(map[interface{}]bool, 0)
 		iter := context.db.C(collection).Find(nil).Iter()
 
 		collectionItem := CollectionItem{}
@@ -93,6 +93,7 @@ outer:
 
 func (context *Context) diffData(before Data, after Data) Data {
 	changes := Data{}
+	// fmt.Printf("Before: %v\n After: %v", before, after)
 	for collectionName, knownIds := range before {
 		newItems, ok := after[collectionName]
 		if !ok {
@@ -103,7 +104,7 @@ func (context *Context) diffData(before Data, after Data) Data {
 			if _, ok := knownIds.Ids[maybeANewId]; !ok {
 				if _, ok := changes[collectionName]; !ok {
 					changes[collectionName] = CollectionIds{
-						Ids: make(map[bson.ObjectId]bool, 0),
+						Ids: make(map[interface{}]bool, 0),
 					}
 				}
 				changes[collectionName].Ids[maybeANewId] = true
@@ -124,7 +125,7 @@ func (context *Context) presentDiffData(diffData Data) {
 	for collectionName, ids := range diffData {
 		fmt.Println("\t", blueFormat(collectionName))
 		for id, _ := range ids.Ids {
-			fmt.Println("\t\t", greenFormat(id.Hex()))
+			fmt.Println("\t\t", greenFormat(fmt.Sprintf("%v", id)))
 		}
 	}
 }
@@ -150,7 +151,14 @@ func (context *Context) makeScriptFiles(diffData Data) {
 
 		newIds := make([]string, 0)
 		for id, _ := range ids.Ids {
-			newIds = append(newIds, id.Hex())
+			switch t := id.(type) {
+			case bson.ObjectId:
+				newIds = append(newIds, fmt.Sprintf(`ObjectId("%v")`, id.(bson.ObjectId).Hex()))
+			case string:
+				newIds = append(newIds, fmt.Sprintf(`"%v"`, id.(string)))
+			default:
+				log.Fatalf("Can not handle this type: [%T] yet, please report issue on github.com/milanaleksic/mongodiff", t)
+			}
 			context.dumpJsonToFile(collectionName, id, writerImportScript)
 		}
 		templateData.CollectionChanges = append(templateData.CollectionChanges, CollectionChange{
@@ -160,7 +168,7 @@ func (context *Context) makeScriptFiles(diffData Data) {
 	templateData.WriteTemplates()
 }
 
-func (context *Context) dumpJsonToFile(collectionName string, id bson.ObjectId, writerImportScript *bufio.Writer) {
+func (context *Context) dumpJsonToFile(collectionName string, id interface{}, writerImportScript *bufio.Writer) {
 	raw := bson.D{}
 	err := context.db.C(collectionName).Find(bson.M{"_id": id}).One(&raw)
 	if err != nil {
