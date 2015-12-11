@@ -33,9 +33,7 @@ This is `#golang` project. I used Go 1.5.
 
 `go get github.com/milanaleksic/mongodiff` should be enough to get the code and build. 
 
-To build project you can execute:
-
-This will get from internet all 3rd party utilites needed for deployment (upx, go-upx, github-release)
+To build project you can execute (this will get from internet all 3rd party utilites needed for deployment: upx, go-upx, github-release):
 
     make prepare
 
