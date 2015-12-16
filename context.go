@@ -34,7 +34,6 @@ type Context struct {
 
 func (context *Context) checkMongoUp() (err error) {
 	target := context.host
-	fmt.Println(target)
 	if !strings.Contains(target, ":") {
 		target = target + ":27017"
 	}
