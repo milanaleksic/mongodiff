@@ -28,7 +28,7 @@ func main() {
 		host:     *host,
 		dbName:   *dbName,
 		excludes: *excludes,
-		prefix: *fileOutput,
+		prefix:   *fileOutput,
 	}
 	if err := context.checkMongoUp(); err != nil {
 		fmt.Println("Mongo is not up!")

@@ -8,9 +8,9 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"log"
+	"net"
 	"os"
 	"strings"
-	"net"
 )
 
 type CollectionItem struct {
@@ -34,9 +34,11 @@ type Context struct {
 
 func (context *Context) checkMongoUp() (err error) {
 	target := context.host
+	fmt.Println(target)
 	if !strings.Contains(target, ":") {
-		target = target + "27017"
+		target = target + ":27017"
 	}
+	fmt.Printf("Checking if Mongo is up... %s\n", target)
 	conn, err := net.Dial("tcp", target)
 	if err != nil {
 		return err

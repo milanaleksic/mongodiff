@@ -1,10 +1,11 @@
 package main
+
 import (
-	"os"
 	"bufio"
-	"text/template"
-	"log"
 	"bytes"
+	"log"
+	"os"
+	"text/template"
 )
 
 type TemplateData struct {
@@ -25,12 +26,12 @@ type templateConfiguration struct {
 	mode            os.FileMode
 }
 
-var templateConfigurations = []templateConfiguration {
-	{"{{.Filename}}_clean.js", "data/template_js", 0600, },
-	{"{{.Filename}}.bat", "data/template_replay_bat", 0600, },
-	{"{{.Filename}}.sh", "data/template_replay_bash", 0700, },
-	{"{{.Filename}}_clean.bat", "data/template_clean_bat", 0600, },
-	{"{{.Filename}}_clean.sh", "data/template_clean_bash", 0700, },
+var templateConfigurations = []templateConfiguration{
+	{"{{.Filename}}_clean.js", "data/template_js", 0600},
+	{"{{.Filename}}.bat", "data/template_replay_bat", 0600},
+	{"{{.Filename}}.sh", "data/template_replay_bash", 0700},
+	{"{{.Filename}}_clean.bat", "data/template_clean_bat", 0600},
+	{"{{.Filename}}_clean.sh", "data/template_clean_bash", 0700},
 }
 
 func (templateData *TemplateData) WriteTemplates() {
@@ -48,7 +49,7 @@ func (templateData *TemplateData) WriteTemplates() {
 	}
 }
 
-func (templateData *TemplateData) getFilename(configuration templateConfiguration) (string) {
+func (templateData *TemplateData) getFilename(configuration templateConfiguration) string {
 	template, err := template.New(configuration.filenamePattern).Parse(configuration.filenamePattern)
 	if err != nil {
 		log.Fatalf("Template couldn't be parsed", err)

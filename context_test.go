@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/exec"
 	"runtime"
@@ -13,12 +12,11 @@ import (
 )
 
 func TestDiffDetection(t *testing.T) {
-	havingMongoServerRunningInTheBackground(t)
 	preFile := havingTestDataRemovalScript(t)
 	defer os.Remove(preFile.Name())
 	postFile := havingTestDataInjectionScript(t)
 	defer os.Remove(postFile.Name())
-	context := havingContextInstance()
+	context := havingContextInstance(t)
 	defer context.close()
 
 	diffData := thenCalculationOfDeltaContains(t, context,
@@ -57,12 +55,11 @@ func TestDiffDetection(t *testing.T) {
 }
 
 func TestDiffDetectionViaParameter(t *testing.T) {
-	havingMongoServerRunningInTheBackground(t)
 	preFile := havingTestDataRemovalScript(t)
 	defer os.Remove(preFile.Name())
 	postFile := havingTestDataInjectionScript(t)
 	defer os.Remove(postFile.Name())
-	context := havingContextInstance()
+	context := havingContextInstance(t)
 	defer context.close()
 
 	diffData := thenCalculationOfDeltaContains(t, context,
@@ -100,12 +97,11 @@ func TestDiffDetectionViaParameter(t *testing.T) {
 }
 
 func TestDiffDetectionBug5(t *testing.T) {
-	havingMongoServerRunningInTheBackground(t)
 	preFile := havingTestDataRemovalScriptForBug5(t)
 	defer os.Remove(preFile.Name())
 	postFile := havingTestDataInjectionScriptForBug5(t)
 	defer os.Remove(postFile.Name())
-	context := havingContextInstance()
+	context := havingContextInstance(t)
 	defer context.close()
 
 	diffData := thenCalculationOfDeltaContains(t, context,
@@ -212,15 +208,6 @@ func havingTestDataInjectionScriptForBug5(t *testing.T) (postFile *os.File) {
 	return
 }
 
-func havingMongoServerRunningInTheBackground(t *testing.T) {
-	conn, err := net.Dial("tcp", "localhost:27017")
-	if err != nil {
-		t.Error("Test can't be executed without running Mongo process")
-		t.FailNow()
-	}
-	defer conn.Close()
-}
-
 func thenCalculationOfDeltaContains(t *testing.T, context *Context, preHook func(), changeHook func(), changeIds []interface{}) (diffData Data) {
 	preHook()
 	beforeData := context.collectData()
@@ -257,11 +244,15 @@ func thenDiffJsonHasExpectedChange(t *testing.T, contents string) {
 	}
 }
 
-func havingContextInstance() (context *Context) {
+func havingContextInstance(t *testing.T) (context *Context) {
 	context = &Context{
 		dbName: "test",
 		host:   "localhost",
 		prefix: "testing",
+	}
+	if err := context.checkMongoUp(); err != nil {
+		t.Error("Test can't be executed without running Mongo process")
+		t.FailNow()
 	}
 	context.connect()
 	return
