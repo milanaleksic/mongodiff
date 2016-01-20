@@ -61,13 +61,23 @@ func (context *Context) close() {
 }
 
 func (context *Context) collectData() (data Data) {
+	var maxLength = 0
+	defer func() {
+		fmt.Printf("\rScanning completed!%*s\n", maxLength + 1, "")
+	}()
+
 	collections, err := context.db.CollectionNames()
 	if err != nil {
 		log.Fatal("Could not fetch collection names (?)", err)
 	}
 	data = make(Data)
+
 outer:
 	for _, collection := range collections {
+		if ln := len(collection); ln > maxLength {
+			maxLength = ln
+		}
+		fmt.Printf("\r%sScanning collection %s", resetFormat, redFormat(collection))
 		for _, exclude := range strings.Split(context.excludes, ",") {
 			if collection == exclude {
 				continue outer
