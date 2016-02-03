@@ -14,6 +14,8 @@ var greenFormat func(string) string = ansi.ColorFunc("green+b+h")
 var redFormat func(string) string = ansi.ColorFunc("red+b+h")
 var resetFormat string = ansi.ColorCode("reset")
 
+var Version = "undefined"
+
 func main() {
 	defer fmt.Println(resetFormat)
 
@@ -22,7 +24,13 @@ func main() {
 	var waitForSignal *bool = flag.Bool("waitForSignal", true, "should program wait for Ctrl+C before it fetches changes from DB?")
 	var dbName *string = flag.String("db", "test", "Which DB to monitor")
 	var excludes *string = flag.String("excludes", "", "Which collections to ignore")
+	var version *bool = flag.Bool("version", false, "Get application version")
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("mongodiff version: %v\n", Version)
+		return
+	}
 
 	context := Context{
 		host:     *host,

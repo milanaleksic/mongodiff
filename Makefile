@@ -12,7 +12,7 @@ SOURCES_DATA := $(shell find $(DATA_DIR))
 
 ${APP_NAME}: ${BINDATA_DEBUG_FILE} $(SOURCES)
 	go get ./...
-	go build -o ${APP_NAME}
+	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
 .PHONY: deploy
 deploy: ${BINDATA_RELEASE_FILE} $(SOURCES)
@@ -20,7 +20,7 @@ ifndef GITHUB_TOKEN
 	$(error GITHUB_TOKEN parameter must be set)
 endif
 ifndef TAG
-	$(error TAG parameter must be set)
+	$(error TAG parameter must be set: make TAG=<TAG_VALUE>)
 endif
 	echo Creating and pushing tag
 	git tag ${TAG}
