@@ -9,22 +9,23 @@ import (
 	"os/signal"
 )
 
-var blueFormat func(string) string = ansi.ColorFunc("blue+b+h")
-var greenFormat func(string) string = ansi.ColorFunc("green+b+h")
-var redFormat func(string) string = ansi.ColorFunc("red+b+h")
-var resetFormat string = ansi.ColorCode("reset")
+var blueFormat = ansi.ColorFunc("blue+b+h")
+var greenFormat = ansi.ColorFunc("green+b+h")
+var redFormat = ansi.ColorFunc("red+b+h")
+var resetFormat = ansi.ColorCode("reset")
 
+// Version holds the main version string which should be updated externally when building release
 var Version = "undefined"
 
 func main() {
 	defer fmt.Println(resetFormat)
 
-	var host *string = flag.String("host", "127.0.0.1", "host to connect to, defaults to localhost")
-	var fileOutput *string = flag.String("fileOutput", "setup", "Prefix to use for all files to use as target dump of the setup script")
-	var waitForSignal *bool = flag.Bool("waitForSignal", true, "should program wait for Ctrl+C before it fetches changes from DB?")
-	var dbName *string = flag.String("db", "test", "Which DB to monitor")
-	var excludes *string = flag.String("excludes", "", "Which collections to ignore")
-	var version *bool = flag.Bool("version", false, "Get application version")
+	var host = flag.String("host", "127.0.0.1", "host to connect to, defaults to localhost")
+	var fileOutput = flag.String("fileOutput", "setup", "Prefix to use for all files to use as target dump of the setup script")
+	var waitForSignal = flag.Bool("waitForSignal", true, "should program wait for Ctrl+C before it fetches changes from DB?")
+	var dbName = flag.String("db", "test", "Which DB to monitor")
+	var excludes = flag.String("excludes", "", "Which collections to ignore")
+	var version = flag.Bool("version", false, "Get application version")
 	flag.Parse()
 
 	if *version {
@@ -32,7 +33,7 @@ func main() {
 		return
 	}
 
-	context := Context{
+	context := context{
 		host:     *host,
 		dbName:   *dbName,
 		excludes: *excludes,

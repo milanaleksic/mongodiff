@@ -31,12 +31,12 @@ endif
 	github-release release -u milanaleksic -r ${APP_NAME} --tag "${TAG}" --name "v${TAG}"
 
 	echo Building and shipping Windows
-	GOOS=windows go build
+	GOOS=windows go build -ldflags '-X main.Version=${TAG}'
 	upx ${APP_NAME}.exe
 	github-release upload -u milanaleksic -r ${APP_NAME} --tag ${TAG} --name "${APP_NAME}-${TAG}-windows-amd64.exe" -f ${APP_NAME}.exe
 
 	echo Building and shipping Linux
-	GOOS=linux go build
+	GOOS=linux go build -ldflags '-X main.Version=${TAG}'
 	goupx ${APP_NAME}
 	github-release upload -u milanaleksic -r ${APP_NAME} --tag ${TAG} --name "${APP_NAME}-${TAG}-linux-amd64" -f ${APP_NAME}
 
@@ -48,9 +48,14 @@ run: ${APP_NAME}
 test:
 	go test
 
+.PHONY: metalinter
+metalinter: ${APP_NAME}
+	gometalinter --exclude=bindata_* ./...
+
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
 	go get ./...
+	$(MAKE) metalinter
 	go build -o ${APP_NAME}
 
 ${BINDATA_DEBUG_FILE}: ${SOURCES_DATA}
@@ -64,8 +69,13 @@ ${BINDATA_RELEASE_FILE}: ${SOURCES_DATA}
 .PHONY: prepare
 prepare: ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/github-release \
+	${GOPATH}/bin/gometalinter \
 	${GOPATH}/bin/goupx \
 	upx
+
+${GOPATH}/bin/gometalinter:
+	go get github.com/alecthomas/gometalinter
+	gometalinter --install --update
 
 ${GOPATH}/bin/goupx:
 	go get github.com/pwaller/goupx

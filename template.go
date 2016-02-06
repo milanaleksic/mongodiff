@@ -8,13 +8,13 @@ import (
 	"text/template"
 )
 
-type TemplateData struct {
+type templateData struct {
 	DbName            string
 	Filename          string
-	CollectionChanges []CollectionChange
+	CollectionChanges []collectionChange
 }
 
-type CollectionChange struct {
+type collectionChange struct {
 	CollectionName   string
 	ImportScriptName string
 	AddedIds         []string
@@ -34,27 +34,43 @@ var templateConfigurations = []templateConfiguration{
 	{"{{.Filename}}_clean.sh", "data/template_clean_bash", 0700},
 }
 
-func (templateData *TemplateData) WriteTemplates() {
+func (templateData *templateData) WriteTemplates() {
+	var toRemove []*os.File
+	var toFlush []*bufio.Writer
+	defer func() {
+		for _, f := range toFlush {
+			_ = f.Flush()
+		}
+		for _, f := range toRemove {
+			_ = f.Close()
+		}
+	}()
 	for _, configuration := range templateConfigurations {
 		file := openFileOrFatal(templateData.getFilename(configuration))
-		file.Chmod(configuration.mode)
-		defer file.Close()
+		if err := file.Chmod(configuration.mode);  err != nil {
+			log.Printf("Could not change file privileges for file %s, err:%v", file.Name(), err)
+		}
+		toRemove = append(toRemove, file)
 		fileWriter := bufio.NewWriter(file)
-		defer fileWriter.Flush()
+		toFlush = append(toFlush, fileWriter)
 		template, err := template.New(configuration.templateName).Parse(string(MustAsset(configuration.templateName)))
 		if err != nil {
-			log.Fatalf("Template couldn't be parsed", err)
+			log.Fatalf("Template couldn't be parsed %s, err:%v", configuration.filenamePattern, err)
 		}
-		template.Execute(fileWriter, templateData)
+		if err := template.Execute(fileWriter, templateData);  err != nil {
+			log.Fatalf("Template couldn't be expanded %s, err:%v", configuration.filenamePattern, err)
+		}
 	}
 }
 
-func (templateData *TemplateData) getFilename(configuration templateConfiguration) string {
+func (templateData *templateData) getFilename(configuration templateConfiguration) string {
 	template, err := template.New(configuration.filenamePattern).Parse(configuration.filenamePattern)
 	if err != nil {
-		log.Fatalf("Template couldn't be parsed", err)
+		log.Fatalf("Template couldn't be parsed %s, err:%v", configuration.filenamePattern, err)
 	}
 	var filenameBuffer = &bytes.Buffer{}
-	template.Execute(filenameBuffer, templateData)
+	if err := template.Execute(filenameBuffer, templateData);  err != nil {
+		log.Fatalf("Template couldn't be expanded %s, err:%v", configuration.filenamePattern, err)
+	}
 	return string(filenameBuffer.Bytes())
 }
