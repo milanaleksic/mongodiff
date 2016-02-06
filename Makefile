@@ -50,7 +50,7 @@ test:
 
 .PHONY: metalinter
 metalinter: ${APP_NAME}
-	gometalinter --exclude=bindata_* ./...
+	gometalinter --exclude=bindata_* --deadline=2m ./...
 
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
