@@ -1,6 +1,6 @@
 # Record & replay changes to a MongoDB
 
-[![Build Status](https://travis-ci.org/milanaleksic/mongodiff.svg?branch=master)](https://travis-ci.org/milanaleksic/mongodiff)
+[![Build Status](https://semaphoreci.com/api/v1/milanaleksic/mongodiff/branches/master/badge.svg)](https://semaphoreci.com/milanaleksic/mongodiff)
 
 This utility makes Windows and Linux scripts to reproduce manual actions done on a Mongo DB (or actions that are result of some script / acceptance test).
 
@@ -29,7 +29,7 @@ Weekly Scrum Demos. This tool makes it a breeze for most cases which might other
 
 ## Building, tagging and artifact deployment
 
-This is `#golang` project. I used Go 1.5. 
+This is `#golang` project. I used Go 1.6. 
 
 `go get github.com/milanaleksic/mongodiff` should be enough to get the code and build. 
 

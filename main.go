@@ -33,32 +33,32 @@ func main() {
 		return
 	}
 
-	context := context{
+	ctx := context{
 		host:     *host,
 		dbName:   *dbName,
 		excludes: *excludes,
 		prefix:   *fileOutput,
 	}
-	if err := context.checkMongoUp(); err != nil {
+	if err := ctx.checkMongoUp(); err != nil {
 		fmt.Println("Mongo is not up!")
 		os.Exit(1)
 	}
-	context.connect()
-	defer context.close()
+	ctx.connect()
+	defer ctx.close()
 
-	beforeData := context.collectData()
+	beforeData := ctx.collectData()
 
 	waitForStop(*waitForSignal)
 
-	afterData := context.collectData()
+	afterData := ctx.collectData()
 
-	diffData := context.diffData(beforeData, afterData)
+	diffData := ctx.diffData(beforeData, afterData)
 
 	if len(diffData) == 0 {
 		fmt.Println(redFormat("No changes detected!"))
 	} else {
-		context.presentDiffData(diffData)
-		context.makeScriptFiles(diffData)
+		ctx.presentDiffData(diffData)
+		ctx.makeScriptFiles(diffData)
 	}
 }
 

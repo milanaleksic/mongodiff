@@ -87,10 +87,10 @@ outer:
 		ids := make(map[interface{}]bool, 0)
 		iter := context.db.C(collection).Find(nil).Iter()
 
-		collectionItem := collectionItem{}
-		for iter.Next(&collectionItem) {
-			// fmt.Printf("Result: %v\n", collectionItem.Id)
-			ids[collectionItem.ID] = true
+		collItem := collectionItem{}
+		for iter.Next(&collItem) {
+			// fmt.Printf("Result: %v\n", collItem.Id)
+			ids[collItem.ID] = true
 		}
 		if err := iter.Close(); err != nil {
 			log.Fatal("Could not close iterator", err)
