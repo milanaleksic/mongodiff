@@ -75,6 +75,9 @@ func (context *context) collectData() (collectedData data) {
 
 outer:
 	for _, collection := range collections {
+		if strings.HasPrefix(collection, "system.") {
+			continue
+		}
 		if ln := len(collection); ln > maxLength {
 			maxLength = ln
 		}
@@ -105,7 +108,6 @@ outer:
 
 func (context *context) diffData(before data, after data) data {
 	changes := data{}
-	// fmt.Printf("Before: %v\n After: %v", before, after)
 	for collectionName, knownIds := range before {
 		newItems, ok := after[collectionName]
 		if !ok {
@@ -123,12 +125,13 @@ func (context *context) diffData(before data, after data) data {
 			}
 		}
 	}
-	for collectionName := range after {
-		known, ok := before[collectionName]
+	for collectionName, knownIds := range after {
+		_, ok := before[collectionName]
 		if !ok {
-			changes[collectionName] = known
+			changes[collectionName] = knownIds
 		}
 	}
+	fmt.Printf("Before: %v\nAfter: %v\nDiff: %v\n", before, after, changes)
 	return changes
 }
 

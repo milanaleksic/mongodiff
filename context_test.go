@@ -12,6 +12,22 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+func TestWhenAddingToNonExistingDatabase(t *testing.T) {
+	preData := data{}
+	postData := data {
+		"diffTest": collectionIds{
+			Ids: map[interface{}]bool {
+				"foo": true,
+			},
+		},
+	}
+	dummyContext := &context{}
+	diff := dummyContext.diffData(preData, postData)
+	if len(diff) != 1 || len(diff["diffTest"].Ids) != 1 {
+		t.Fatal("Expected deduction of one diff but got", len(diff), len(diff["diffTest"].Ids))
+	}
+}
+
 func TestDiffDetection(t *testing.T) {
 	preFile := havingTestDataRemovalScript(t)
 	postFile := havingTestDataInjectionScript(t)
@@ -122,19 +138,23 @@ func run(name string, args ...string) {
 			panic(fmt.Sprintf("Invalid string format: %v", err))
 		}
 	}
-	fmt.Println(greenFormat(fmt.Sprintf("Output of command %s with args %s %s\n", name, args, out)))
+	// fmt.Println(fmt.Sprintf("Output of command %s with args %s %s\n", name, args, out))
 }
 
 func havingTestDataRemovalScript(t *testing.T) (preFile *os.File) {
-	return testFile(t, "test_post", `db.diffTest.remove({ "_id" : ObjectId("501ca04b668d67b3d6489f3a") });`)
+	return testFile(t, "test_post1", `
+			db.diffTest.remove({ "_id" : ObjectId("501ca04b668d67b3d6489f3a") });
+		`)
 }
 
 func havingTestDataRemovalScriptForBug5(t *testing.T) (preFile *os.File) {
-	return testFile(t, "test_post", `db.diffTest.remove({ "_id" : "foo" });`)
+	return testFile(t, "test_post2", `
+			db.diffTest.remove({ "_id" : "foo" });
+		`)
 }
 
 func havingTestDataInjectionScript(t *testing.T) (postFile *os.File) {
-	return testFile(t, "test_post", `
+	return testFile(t, "test_post3", `
 		db.diffTest.insert({
 			"_id" : ObjectId("501ca04b668d67b3d6489f3a"),
 			"a" : "aaf52b19-6c25-11e5-86ae-af5a85ef200c",
@@ -161,7 +181,7 @@ func havingTestDataInjectionScript(t *testing.T) (postFile *os.File) {
 }
 
 func havingTestDataInjectionScriptForBug5(t *testing.T) (postFile *os.File) {
-	return testFile(t, "test_post", `db.diffTest.insert({"_id": "foo"});`)
+	return testFile(t, "test_post4", `db.diffTest.insert({"_id": "foo"});`)
 }
 
 func testFile(t *testing.T, prefix string, content string) (postFile *os.File) {
@@ -179,16 +199,15 @@ func testFile(t *testing.T, prefix string, content string) (postFile *os.File) {
 func thenCalculationOfDeltaContains(t *testing.T, context *context, preHook func(), changeHook func(), changeIds []interface{}) (diffData data) {
 	preHook()
 	beforeData := context.collectData()
+	// fmt.Printf("After pre hook: %v\n", beforeData)
 	changeHook()
 	afterData := context.collectData()
+	// fmt.Printf("After change hook: %v\n", beforeData)
 	diffData = context.diffData(beforeData, afterData)
+	// fmt.Printf("Diff: %v\n", diffData)
 
-	if len(diffData) != len(changeIds) {
-		t.Error("Expected this many elements in diff:", len(changeIds), "but was:", len(diffData))
-		t.FailNow()
-	}
 	if len(diffData["diffTest"].Ids) != len(changeIds) {
-		t.Error("Expected this many elements in diff:", len(changeIds), "but was:", len(diffData["diffTest"].Ids))
+		t.Error("Expected this many elements in diff for diffTest:", len(changeIds), "but was:", len(diffData["diffTest"].Ids))
 		t.FailNow()
 	}
 	for _, id := range changeIds {
