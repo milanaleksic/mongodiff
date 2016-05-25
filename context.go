@@ -131,7 +131,7 @@ func (context *context) diffData(before data, after data) data {
 			changes[collectionName] = knownIds
 		}
 	}
-	fmt.Printf("Before: %v\nAfter: %v\nDiff: %v\n", before, after, changes)
+	// fmt.Printf("Before: %v\nAfter: %v\nDiff: %v\n", before, after, changes)
 	return changes
 }
 
