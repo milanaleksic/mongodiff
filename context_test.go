@@ -14,9 +14,9 @@ import (
 
 func TestWhenAddingToNonExistingDatabase(t *testing.T) {
 	preData := data{}
-	postData := data {
+	postData := data{
 		"diffTest": collectionIds{
-			Ids: map[interface{}]bool {
+			Ids: map[interface{}]bool{
 				"foo": true,
 			},
 		},

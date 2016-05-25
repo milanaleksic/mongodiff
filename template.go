@@ -47,7 +47,7 @@ func (templateData *templateData) WriteTemplates() {
 	}()
 	for _, configuration := range templateConfigurations {
 		file := openFileOrFatal(templateData.getFilename(configuration))
-		if err := file.Chmod(configuration.mode);  err != nil {
+		if err := file.Chmod(configuration.mode); err != nil {
 			log.Printf("Could not change file privileges for file %s, err:%v", file.Name(), err)
 		}
 		toRemove = append(toRemove, file)
@@ -57,7 +57,7 @@ func (templateData *templateData) WriteTemplates() {
 		if err != nil {
 			log.Fatalf("Template couldn't be parsed %s, err:%v", configuration.filenamePattern, err)
 		}
-		if err := template.Execute(fileWriter, templateData);  err != nil {
+		if err := template.Execute(fileWriter, templateData); err != nil {
 			log.Fatalf("Template couldn't be expanded %s, err:%v", configuration.filenamePattern, err)
 		}
 	}
@@ -69,7 +69,7 @@ func (templateData *templateData) getFilename(configuration templateConfiguratio
 		log.Fatalf("Template couldn't be parsed %s, err:%v", configuration.filenamePattern, err)
 	}
 	var filenameBuffer = &bytes.Buffer{}
-	if err := template.Execute(filenameBuffer, templateData);  err != nil {
+	if err := template.Execute(filenameBuffer, templateData); err != nil {
 		log.Fatalf("Template couldn't be expanded %s, err:%v", configuration.filenamePattern, err)
 	}
 	return string(filenameBuffer.Bytes())

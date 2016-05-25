@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mgutz/ansi"
 	"os/signal"
+
+	"github.com/mgutz/ansi"
 )
 
 var blueFormat = ansi.ColorFunc("blue+b+h")
