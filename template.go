@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"text/template"
+	"runtime"
 )
 
 type templateData struct {
@@ -47,8 +48,10 @@ func (templateData *templateData) WriteTemplates() {
 	}()
 	for _, configuration := range templateConfigurations {
 		file := openFileOrFatal(templateData.getFilename(configuration))
-		if err := file.Chmod(configuration.mode); err != nil {
-			log.Printf("Could not change file privileges for file %s, err:%v", file.Name(), err)
+		if runtime.GOOS != "windows" {
+			if err := file.Chmod(configuration.mode); err != nil {
+				log.Printf("Could not change file privileges for file %s, err:%v", file.Name(), err)
+			}
 		}
 		toRemove = append(toRemove, file)
 		fileWriter := bufio.NewWriter(file)
