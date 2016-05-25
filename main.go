@@ -69,11 +69,9 @@ func waitForStop(waitForSignal bool) {
 		fmt.Println(blueFormat("Send SIGINT (") + redFormat("Ctrl+C") + blueFormat(") when completed the introduction of things you wish to put in demo contents"))
 		signalChannel := make(chan os.Signal)
 		signal.Notify(signalChannel, os.Interrupt)
-		select {
-		case c := <-signalChannel:
-			fmt.Println(blueFormat("Signal received: ") + redFormat(c.String()))
-			done <- true
-		}
+		c := <-signalChannel
+		fmt.Println(blueFormat("Signal received: ") + redFormat(c.String()))
+		done <- true
 	}()
 
 	if !waitForSignal {
