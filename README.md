@@ -27,7 +27,7 @@ For example:
 
 Weekly Scrum Demos. This tool makes it a breeze for most cases which might otherwise take too much preparation.
 
-## Building, tagging and artifact deployment
+## (For developers) Building, tagging and artifact deployment
 
 This is `#golang` project. I used Go 1.6. 
 
