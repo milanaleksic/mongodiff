@@ -28,7 +28,6 @@ _testmain.go
 mongodiff
 mongodiff.exe
 
-bindata_debug.go
 bindata_release.go
 upx
 setup*
