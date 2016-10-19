@@ -12,6 +12,7 @@ import (
 	"github.com/mongodb/mongo-tools/common/bsonutil"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 type collectionItem struct {
@@ -31,6 +32,8 @@ type context struct {
 	dbName   string
 	excludes string
 	prefix   string
+	username string
+	password string
 }
 
 func (context *context) checkMongoUp() (err error) {
@@ -43,13 +46,25 @@ func (context *context) checkMongoUp() (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = conn.Close() }()
+	defer func() {
+		_ = conn.Close()
+	}()
 	return
 }
 
 func (context *context) connect() {
 	var err error
-	context.session, err = mgo.Dial(context.host)
+	info, err := mgo.ParseURL(context.host)
+	if err != nil {
+		panic(err)
+	}
+	info.Timeout = 5*time.Second
+	if context.username != "" && context.password != "" {
+		info.Username = context.username
+		info.Password = context.password
+		info.Database = context.dbName
+	}
+	context.session, err = mgo.DialWithInfo(info)
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +79,7 @@ func (context *context) close() {
 func (context *context) collectData() (collectedData data) {
 	var maxLength = 0
 	defer func() {
-		fmt.Printf("\rScanning completed!%*s\n", maxLength+1, "")
+		fmt.Printf("\rScanning completed!%*s\n", maxLength + 1, "")
 	}()
 
 	collections, err := context.db.CollectionNames()
@@ -73,7 +88,7 @@ func (context *context) collectData() (collectedData data) {
 	}
 	collectedData = make(data)
 
-outer:
+	outer:
 	for _, collection := range collections {
 		if strings.HasPrefix(collection, "system.") {
 			continue
