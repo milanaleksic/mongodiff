@@ -8,7 +8,6 @@ import (
 	"github.com/mongodb/mongo-tools/common/util"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"reflect"
 	"time"
 )
 
@@ -58,6 +57,9 @@ func ConvertJSONValueToBSON(x interface{}) (interface{}, error) {
 			return nil, errors.New("expected ObjectId to contain 24 hexadecimal characters")
 		}
 		return bson.ObjectIdHex(s), nil
+
+	case json.Decimal128:
+		return v.Decimal128, nil
 
 	case json.Date: // Date
 		n := int64(v)
@@ -113,7 +115,7 @@ func ConvertJSONValueToBSON(x interface{}) (interface{}, error) {
 		return bson.Undefined, nil
 
 	default:
-		return nil, fmt.Errorf("conversion of JSON type '%v' unsupported", v)
+		return nil, fmt.Errorf("conversion of JSON value '%v' of type '%T' not supported", v, v)
 	}
 }
 
@@ -126,6 +128,18 @@ func convertKeys(v bson.M) (bson.M, error) {
 		v[key] = jsonValue
 	}
 	return v, nil
+}
+
+func getConvertedKeys(v bson.M) (bson.M, error) {
+	out := bson.M{}
+	for key, value := range v {
+		jsonValue, err := GetBSONValueAsJSON(value)
+		if err != nil {
+			return nil, err
+		}
+		out[key] = jsonValue
+	}
+	return out, nil
 }
 
 // ConvertBSONValueToJSON walks through a document or an array and
@@ -177,6 +191,9 @@ func ConvertBSONValueToJSON(x interface{}) (interface{}, error) {
 
 	case bson.ObjectId: // ObjectId
 		return json.ObjectId(v.Hex()), nil
+
+	case bson.Decimal128:
+		return json.Decimal128{v}, nil
 
 	case time.Time: // Date
 		return json.Date(v.Unix()*1000 + int64(v.Nanosecond()/1e6)), nil
@@ -241,5 +258,131 @@ func ConvertBSONValueToJSON(x interface{}) (interface{}, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("conversion of BSON type '%v' not supported %v", reflect.TypeOf(x), x)
+	return nil, fmt.Errorf("conversion of BSON value '%v' of type '%T' not supported", x, x)
+}
+
+// GetBSONValueAsJSON is equivalent to ConvertBSONValueToJSON, but does not mutate its argument.
+func GetBSONValueAsJSON(x interface{}) (interface{}, error) {
+	switch v := x.(type) {
+	case nil:
+		return nil, nil
+	case bool:
+		return v, nil
+
+	case *bson.M: // document
+		doc, err := getConvertedKeys(*v)
+		if err != nil {
+			return nil, err
+		}
+		return doc, err
+	case bson.M: // document
+		return getConvertedKeys(v)
+	case map[string]interface{}:
+		return getConvertedKeys(v)
+	case bson.D:
+		out := bson.D{}
+		for _, value := range v {
+			jsonValue, err := GetBSONValueAsJSON(value.Value)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, bson.DocElem{
+				Name:  value.Name,
+				Value: jsonValue,
+			})
+		}
+		return MarshalD(out), nil
+	case MarshalD:
+		out, err := GetBSONValueAsJSON(bson.D(v))
+		if err != nil {
+			return nil, err
+		}
+		return MarshalD(out.(bson.D)), nil
+	case []interface{}: // array
+		out := []interface{}{}
+		for _, value := range v {
+			jsonValue, err := GetBSONValueAsJSON(value)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, jsonValue)
+		}
+		return out, nil
+
+	case string:
+		return v, nil // require no conversion
+
+	case int:
+		return json.NumberInt(v), nil
+
+	case bson.ObjectId: // ObjectId
+		return json.ObjectId(v.Hex()), nil
+
+	case bson.Decimal128:
+		return json.Decimal128{v}, nil
+
+	case time.Time: // Date
+		return json.Date(v.Unix()*1000 + int64(v.Nanosecond()/1e6)), nil
+
+	case int64: // NumberLong
+		return json.NumberLong(v), nil
+
+	case int32: // NumberInt
+		return json.NumberInt(v), nil
+
+	case float64:
+		return json.NumberFloat(v), nil
+
+	case float32:
+		return json.NumberFloat(float64(v)), nil
+
+	case []byte: // BinData (with generic type)
+		data := base64.StdEncoding.EncodeToString(v)
+		return json.BinData{0x00, data}, nil
+
+	case bson.Binary: // BinData
+		data := base64.StdEncoding.EncodeToString(v.Data)
+		return json.BinData{v.Kind, data}, nil
+
+	case mgo.DBRef: // DBRef
+		return json.DBRef{v.Collection, v.Id, v.Database}, nil
+
+	case bson.DBPointer: // DBPointer
+		return json.DBPointer{v.Namespace, v.Id}, nil
+
+	case bson.RegEx: // RegExp
+		return json.RegExp{v.Pattern, v.Options}, nil
+
+	case bson.MongoTimestamp: // Timestamp
+		timestamp := int64(v)
+		return json.Timestamp{
+			Seconds:   uint32(timestamp >> 32),
+			Increment: uint32(timestamp),
+		}, nil
+
+	case bson.JavaScript: // JavaScript
+		var scope interface{}
+		var err error
+		if v.Scope != nil {
+			scope, err = GetBSONValueAsJSON(v.Scope)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return json.JavaScript{v.Code, scope}, nil
+
+	default:
+		switch x {
+		case bson.MinKey: // MinKey
+			return json.MinKey{}, nil
+
+		case bson.MaxKey: // MaxKey
+			return json.MaxKey{}, nil
+
+		case bson.Undefined: // undefined
+			return json.Undefined{}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("conversion of BSON value '%v' of type '%T' not supported", x, x)
 }
