@@ -34,6 +34,7 @@ type context struct {
 	prefix   string
 	username string
 	password string
+	copyCredentials bool
 }
 
 func (context *context) checkMongoUp() (err error) {
@@ -170,7 +171,12 @@ func openFileOrFatal(filename string) (file *os.File) {
 
 func (context *context) makeScriptFiles(diffData data) {
 	templateData := templateData{
-		DbName: context.dbName, Filename: context.prefix,
+		DbName: context.dbName,
+		Filename: context.prefix,
+	}
+	if context.copyCredentials {
+		templateData.Username = context.username
+		templateData.Password = context.password
 	}
 
 	var toRemove []*os.File

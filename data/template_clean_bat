@@ -8,7 +8,7 @@ SET MONGO_SERVER=%1
 
 :RUN_SCRIPT
 echo Cleaning mongodiff-induced changes from %MONGO_SERVER%
-mongo %MONGO_SERVER%/{{.DbName}} {{.Filename}}_clean.js
+mongo %MONGO_SERVER%/{{.DbName}} {{if .Username}} -u {{.Username}} {{end}} {{if .Password}} -p {{.Password}} {{end}} {{.Filename}}_clean.js
 
 EXIT /B 0
 

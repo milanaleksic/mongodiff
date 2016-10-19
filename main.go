@@ -28,6 +28,7 @@ func main() {
 	var excludes = flag.String("excludes", "", "Which collections to ignore")
 	var username = flag.String("username", "", "(Optional) which username to use to authenticate")
 	var password = flag.String("password", "", "(Optional) which password to use to authenticate")
+	var copyCredentials = flag.Bool("copyCredentials", false, "Should credentials be copied to the script")
 	var version = flag.Bool("version", false, "Get application version")
 	flag.Parse()
 
@@ -43,6 +44,7 @@ func main() {
 		prefix:   *fileOutput,
 		username: *username,
 		password: *password,
+		copyCredentials: *copyCredentials,
 	}
 	if err := ctx.checkMongoUp(); err != nil {
 		fmt.Println("Mongo is not up!")

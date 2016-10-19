@@ -10,9 +10,9 @@ if [ -z "$MONGO_SERVER" ]; then
 fi
 
 echo "Cleaning mongodiff-induced changes from $MONGO_SERVER"
-mongo $MONGO_SERVER/{{.DbName}} {{.Filename}}_clean.js
+mongo $MONGO_SERVER/{{.DbName}} {{if .Username}} -u {{.Username}} {{end}} {{if .Password}} -p {{.Password}} {{end}} {{.Filename}}_clean.js
 echo "Replaying diff"
 {{range $change := .CollectionChanges}}
 echo "    Replaying changes done in {{$change.CollectionName}}"
-mongoimport --host $MONGO_SERVER --db {{$.DbName}} --collection {{$change.CollectionName}} < {{$change.ImportScriptName}}
+mongoimport --host $MONGO_SERVER {{if $.Username}} -u {{$.Username}} {{end}} {{if $.Password}} -p {{$.Password}} {{end}} --db {{$.DbName}} --collection {{$change.CollectionName}} < {{$change.ImportScriptName}}
 {{end}}

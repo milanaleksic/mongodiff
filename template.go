@@ -12,6 +12,8 @@ import (
 type templateData struct {
 	DbName            string
 	Filename          string
+	Username          string
+	Password          string
 	CollectionChanges []collectionChange
 }
 
